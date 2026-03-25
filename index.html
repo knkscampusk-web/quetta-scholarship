@@ -783,7 +783,7 @@ function pgManual(){
   // ── 입력된 수기 장학생 목록
   const allEntries=[];
   ACTIVE_MANUAL.forEach(id=>{
-    (S.manual[id]||[]).filter(r=>r.이름).forEach((r,ri)=>allEntries.push({...r,schId:id,ri}));
+    (S.manual[id]||[]).forEach((r,ri)=>{if(r.이름)allEntries.push({...r,schId:id,ri});});
   });
   h+=`<div class="card">
     <div class="ch"><span class="ct">입력된 수기 장학생</span><span class="cs">${allEntries.length}건</span></div>`;

@@ -312,7 +312,12 @@ async function autoSaveManual(){
   window._ast=setTimeout(async()=>{
     const mk=mkey();
     try{
-      await db.collection('quetta_data').doc(mk).set({manual:S.manual,excluded:[...S.excluded]},{merge:true});
+      const patch={manual:S.manual,excluded:[...S.excluded]};
+      if(S.curStudents){
+        patch.classStats=calcClassStats();
+        patch.overallAvg=overallAvg();
+      }
+      await db.collection('quetta_data').doc(mk).set(patch,{merge:true});
       setSyncMsg('✓ 자동저장 완료');
     }catch(e){}
   },1000);
@@ -857,6 +862,23 @@ function pgStats(){
       h+=`<tr><td style="color:var(--gold2);font-weight:500">${d.label||k}</td><td>${(d.winners||[]).length}건</td><td>${act}건</td><td>${d.overallAvg?d.overallAvg.toFixed(1):'–'}</td><td style="font-size:11px;color:var(--mu)">${d.savedAt?new Date(d.savedAt).toLocaleDateString('ko-KR'):'–'}</td></tr>`;
     });
     h+=`</tbody></table></div></div>`;
+
+    // 월별 반별 평균 누적
+    h+=`<div class="sec-title">📊 월별 반별 환산표점 평균</div>`;
+    months.slice().reverse().forEach(k=>{
+      const d=S.accumulated[k];
+      if(!d.classStats?.length)return;
+      h+=`<div class="card" style="margin-bottom:8px"><div class="ch"><span class="ct">${d.label||k}</span><span class="cs">전체 평균 ${d.overallAvg?d.overallAvg.toFixed(1):'–'}</span></div>
+        <div class="tw"><table class="t"><thead><tr><th>반</th><th>인원</th><th>환산표점 평균</th><th>국어 표준</th><th>수학 표준</th><th>탐구 합산</th></tr></thead><tbody>`;
+      d.classStats.forEach(s=>{
+        h+=`<tr><td><b>${s.반}반</b></td><td>${s.인원}명</td>
+          <td style="color:var(--gold2);font-weight:600">${(+s.환산).toFixed(1)}</td>
+          <td>${(+s.국어).toFixed(1)}</td>
+          <td>${(+s.수학).toFixed(1)}</td>
+          <td>${((+s.탐1)+(+s.탐2)).toFixed(1)}</td></tr>`;
+      });
+      h+=`</tbody></table></div></div>`;
+    });
     h+=`<div class="sec-title">🏆 학생별 수상 이력</div>`;
     const sm={};
     months.forEach(k=>{

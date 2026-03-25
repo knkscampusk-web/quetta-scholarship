@@ -363,9 +363,15 @@ function parseExisting(buf){
   const wb=XLSX.read(buf,{type:'array'});
   const raw=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
   const map={};
+  if(raw.length<2)return map;
+  // 헤더 확인해서 구형/신형 자동 감지
+  const header=raw[0].map(v=>String(v).trim());
+  const isNew=header[0]===''&&header[2]==='장학명'&&header[7]==='이름'; // 신형: A비움,C장학명,H이름
+  const nameCol=isNew?7:4;   // 신형 H(7), 구형 이름(4)
+  const scholCol=isNew?2:0;  // 신형 C(2), 구형 장학명(0)
   for(let i=1;i<raw.length;i++){
-    const nm=String(raw[i][7]||'').trim();   // H열: 이름
-    const jl=String(raw[i][2]||'').trim();   // C열: 장학명
+    const nm=String(raw[i][nameCol]||'').trim();
+    const jl=String(raw[i][scholCol]||'').trim();
     if(nm&&jl)map[nm]=map[nm]?map[nm]+', '+jl:jl;
   }
   return map;
@@ -470,7 +476,7 @@ function exportExcel(){
   const rows=[h1];
   ws.forEach(w=>{
     const ex=S.excluded.has(wkey(w));
-    rows.push(['',month,w.lbl,benefitMonth,w.혜택,w.반,w.번호,w.이름,w.계열,w.val,S.exMap[w.이름]||'',w.dup?.length?'중복:'+w.dup.join(', '):'',ex?'제외(중복)':'']);
+    rows.push(['',month,w.lbl,benefitMonth,w.혜택,w.반,w.번호,w.이름,w.계열,w.val,S.exMap[w.이름]||w.기존장학||'',w.dup?.length?'중복:'+w.dup.join(', '):'',ex?'제외(중복)':'']);
   });
   const s1=XLSX.utils.aoa_to_sheet(rows);
   s1['!cols']=[{wch:4},{wch:8},{wch:22},{wch:8},{wch:14},{wch:5},{wch:8},{wch:10},{wch:5},{wch:10},{wch:18},{wch:22},{wch:10}];

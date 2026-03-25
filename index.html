@@ -9,12 +9,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
-  --bg:#0d1b2a;--bg2:#162032;--bg3:#1e2d40;--bg4:#253550;
-  --gold:#c9a84c;--gold2:#e8c97a;--goldb:rgba(201,168,76,.12);
-  --w:#f4f1eb;--w2:#ece8df;
-  --mu:rgba(244,241,235,.45);--mu2:rgba(244,241,235,.22);--mu3:rgba(244,241,235,.1);
-  --bo:rgba(244,241,235,.12);--bo2:rgba(244,241,235,.06);
-  --green:#5da87a;--blue:#5b9bd5;--red:#d97c6a;--amber:#d4a039;
+  --bg:#f7f3ec;--bg2:#ede7dc;--bg3:#e4ddd0;--bg4:#d9d1c2;
+  --gold:#a07828;--gold2:#8a6420;--goldb:rgba(160,120,40,.1);
+  --w:#2d2416;--w2:#3e3220;
+  --mu:rgba(45,36,22,.5);--mu2:rgba(45,36,22,.28);--mu3:rgba(45,36,22,.08);
+  --bo:rgba(45,36,22,.14);--bo2:rgba(45,36,22,.07);
+  --green:#3a8a5a;--blue:#3a74b0;--red:#c05540;--amber:#b07820;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:var(--bg);color:var(--w);font-size:13px;line-height:1.6;min-height:100vh}
@@ -24,9 +24,9 @@ body{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:var
 .login-box{background:var(--bg2);border:1px solid var(--bo);border-radius:14px;padding:36px 32px;width:340px;text-align:center}
 .login-box h1{font-size:22px;font-weight:700;color:var(--gold);letter-spacing:.05em;margin-bottom:4px}
 .login-box p{font-size:12px;color:var(--mu);margin-bottom:28px}
-.login-box input{width:100%;padding:10px 12px;background:var(--bg3);border:1px solid var(--bo);border-radius:7px;color:var(--w);font-size:13px;margin-bottom:10px;font-family:inherit}
-.login-box input:focus{outline:none;border-color:rgba(201,168,76,.5)}
-.login-box button{width:100%;padding:11px;background:var(--gold);border:none;border-radius:7px;color:var(--bg);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px}
+.login-box input{width:100%;padding:10px 12px;background:var(--bg2);border:1px solid var(--bo);border-radius:7px;color:var(--w);font-size:13px;margin-bottom:10px;font-family:inherit}
+.login-box input:focus{outline:none;border-color:rgba(160,120,40,.5)}
+.login-box button{width:100%;padding:11px;background:var(--gold);border:none;border-radius:7px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px}
 .login-box button:hover{background:var(--gold2)}
 .login-err{font-size:12px;color:var(--red);margin-top:8px;min-height:18px}
 
@@ -68,7 +68,7 @@ main{flex:1;min-width:0;padding:24px 28px;overflow-x:hidden}
 .dbg{background:var(--bg3);border-radius:7px;padding:7px 11px;font-size:10px;color:var(--mu);font-family:monospace;line-height:1.7;white-space:pre-wrap;margin-bottom:12px}
 .mets{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:18px}
 .met{background:var(--bg3);border:1px solid var(--bo);border-radius:9px;padding:12px 14px;position:relative;overflow:hidden}
-.met::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--gold);opacity:.4}
+.met::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--gold);opacity:.6}
 .met .l{font-size:10px;color:var(--mu);letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px}
 .met .v{font-size:22px;font-weight:700}
 .card{background:var(--bg2);border:1px solid var(--bo);border-radius:10px;overflow:hidden;margin-bottom:12px}
@@ -89,19 +89,19 @@ table.t tr.ex td{text-decoration:line-through;opacity:.45}
 .neg{color:var(--red)}
 .rk1{color:var(--amber);font-weight:700}
 .bx{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:500;white-space:nowrap}
-.bq{background:rgba(201,168,76,.18);color:var(--gold2);border:1px solid rgba(201,168,76,.3)}
-.bd{background:rgba(93,168,122,.15);color:var(--green);border:1px solid rgba(93,168,122,.25)}
-.bm{background:rgba(91,155,213,.15);color:var(--blue);border:1px solid rgba(91,155,213,.25)}
-.bg{background:rgba(80,190,100,.15);color:#5dc870;border:1px solid rgba(80,190,100,.25)}
-.bb{background:rgba(212,160,57,.15);color:var(--amber);border:1px solid rgba(212,160,57,.25)}
-.dup{display:inline-flex;align-items:center;padding:1px 5px;border-radius:8px;background:rgba(217,124,106,.2);color:var(--red);font-size:10px;margin-left:4px;border:.5px solid rgba(217,124,106,.3)}
+.bq{background:rgba(160,120,40,.15);color:var(--gold);border:1px solid rgba(160,120,40,.3)}
+.bd{background:rgba(58,138,90,.12);color:var(--green);border:1px solid rgba(58,138,90,.25)}
+.bm{background:rgba(58,116,176,.12);color:var(--blue);border:1px solid rgba(58,116,176,.25)}
+.bg{background:rgba(58,160,90,.12);color:#2a8a45;border:1px solid rgba(58,160,90,.25)}
+.bb{background:rgba(176,120,32,.12);color:var(--amber);border:1px solid rgba(176,120,32,.25)}
+.dup{display:inline-flex;align-items:center;padding:1px 5px;border-radius:8px;background:rgba(192,85,64,.15);color:var(--red);font-size:10px;margin-left:4px;border:.5px solid rgba(192,85,64,.3)}
 .mg{background:var(--bg2);border:1px solid var(--bo);border-radius:10px;overflow:hidden;margin-bottom:10px}
 .mgh{padding:8px 14px;background:var(--bg3);border-bottom:1px solid var(--bo);display:flex;align-items:center;gap:8px}
 .mgt{font-size:12px;font-weight:500}
 .mgb{padding:10px 14px}
 .mgr{display:flex;gap:5px;margin-bottom:5px;align-items:center}
-.fi{padding:4px 7px;border:1px solid var(--bo);border-radius:5px;background:var(--bg3);color:var(--w);font-size:12px;font-family:inherit;min-width:0}
-.fi:focus{outline:none;border-color:rgba(201,168,76,.5)}
+.fi{padding:4px 7px;border:1px solid var(--bo);border-radius:5px;background:var(--bg2);color:var(--w);font-size:12px;font-family:inherit;min-width:0}
+.fi:focus{outline:none;border-color:rgba(160,120,40,.5)}
 .rdel{background:none;border:none;cursor:pointer;color:var(--mu);font-size:13px;padding:2px;line-height:1;flex-shrink:0}
 .rdel:hover{color:var(--red)}
 .addbtn{font-size:11px;padding:4px 10px;border:1px dashed var(--bo);border-radius:5px;background:transparent;cursor:pointer;color:var(--mu);margin-top:4px}
@@ -109,12 +109,12 @@ table.t tr.ex td{text-decoration:line-through;opacity:.45}
 .sv{font-size:10px;color:var(--mu);margin-left:auto}
 .btn{padding:6px 14px;border:1px solid var(--bo);border-radius:7px;background:transparent;cursor:pointer;font-size:12px;color:var(--w);font-family:inherit;transition:all .15s}
 .btn:hover{background:var(--mu3)}
-.btn-g{border-color:rgba(201,168,76,.5);color:var(--gold2);background:var(--goldb)}
-.btn-g:hover{background:rgba(201,168,76,.2)}
-.btn-gr{border-color:rgba(93,168,122,.4);color:var(--green);background:rgba(93,168,122,.1)}
-.btn-gr:hover{background:rgba(93,168,122,.2)}
-.btn-b{border-color:rgba(91,155,213,.4);color:var(--blue);background:rgba(91,155,213,.1)}
-.btn-b:hover{background:rgba(91,155,213,.2)}
+.btn-g{border-color:rgba(160,120,40,.5);color:var(--gold);background:var(--goldb)}
+.btn-g:hover{background:rgba(160,120,40,.18)}
+.btn-gr{border-color:rgba(58,138,90,.4);color:var(--green);background:rgba(58,138,90,.08)}
+.btn-gr:hover{background:rgba(58,138,90,.16)}
+.btn-b{border-color:rgba(58,116,176,.4);color:var(--blue);background:rgba(58,116,176,.08)}
+.btn-b:hover{background:rgba(58,116,176,.16)}
 .btn-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:16px}
 .sc{background:var(--bg3);border:1px solid var(--bo);border-radius:9px;padding:12px}
@@ -359,8 +359,8 @@ function parseExisting(buf){
   const raw=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
   const map={};
   for(let i=1;i<raw.length;i++){
-    const nm=String(raw[i][10]||'').trim();
-    const jl=String(raw[i][3]||'').trim();
+    const nm=String(raw[i][7]||'').trim();   // H열: 이름
+    const jl=String(raw[i][2]||'').trim();   // C열: 장학명
     if(nm&&jl)map[nm]=map[nm]?map[nm]+', '+jl:jl;
   }
   return map;
@@ -459,14 +459,16 @@ function toggleExcl(idx){
 function exportExcel(){
   const wb=XLSX.utils.book_new();
   const ws=getAllWinners();
-  const h1=['장학명','혜택','반','번호/학번','이름','계열','환산/향상','기존장학','중복여부','제외여부'];
+  const month=`${S.curMonth}월`;
+  const benefitMonth=`${Number(S.curMonth)+2}월`;
+  const h1=['','해당월','장학명','혜택월','혜택','반','학번','이름','계열','환산/향상','기존장학','중복여부','제외여부'];
   const rows=[h1];
   ws.forEach(w=>{
     const ex=S.excluded.has(wkey(w));
-    rows.push([w.lbl,w.혜택,w.반,w.번호,w.이름,w.계열,w.val,S.exMap[w.이름]||'',w.dup?.length?'중복:'+w.dup.join(', '):'',ex?'제외(중복)':'']);
+    rows.push(['',month,w.lbl,benefitMonth,w.혜택,w.반,w.번호,w.이름,w.계열,w.val,S.exMap[w.이름]||'',w.dup?.length?'중복:'+w.dup.join(', '):'',ex?'제외(중복)':'']);
   });
   const s1=XLSX.utils.aoa_to_sheet(rows);
-  s1['!cols']=[{wch:22},{wch:14},{wch:5},{wch:8},{wch:10},{wch:5},{wch:10},{wch:18},{wch:22},{wch:10}];
+  s1['!cols']=[{wch:4},{wch:8},{wch:22},{wch:8},{wch:14},{wch:5},{wch:8},{wch:10},{wch:5},{wch:10},{wch:18},{wch:22},{wch:10}];
   XLSX.utils.book_append_sheet(wb,s1,'장학생명단');
   const stats=calcClassStats();
   if(stats.length){

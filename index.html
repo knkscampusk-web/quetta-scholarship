@@ -473,6 +473,13 @@ function toggleExcl(idx){
 
 // ── Excel Export ─────────────────────────────────
 function exportExcel(){
+  const excelLbl=lbl=>{
+    if(lbl==='다이닝 장학') return 'QUETTA 전체 1등';
+    if(lbl==='다이닝 하프 장학') return 'QUETTA 전체 2등';
+    if(lbl==='퀀텀 장학') return 'QUETTA 전체 3등';
+    if(/^수학반 1등/.test(lbl)) return '수학담임반 1등';
+    return lbl;
+  };
   const wb=XLSX.utils.book_new();
   const ws=getAllWinners();
   const month=`${S.curMonth}월`;
@@ -481,7 +488,7 @@ function exportExcel(){
   const rows=[h1];
   ws.forEach(w=>{
     const ex=S.excluded.has(wkey(w));
-    rows.push(['',month,w.lbl,benefitMonth,w.혜택,w.반,w.번호,w.이름,w.계열,w.val,S.exMap[w.이름]||w.기존장학||'',w.dup?.length?'중복:'+w.dup.join(', '):'',ex?'제외(중복)':'']);
+    rows.push(['',month,excelLbl(w.lbl),benefitMonth,w.혜택,w.반,w.번호,w.이름,w.계열,w.val,S.exMap[w.이름]||w.기존장학||'',w.dup?.length?'중복:'+w.dup.join(', '):'',ex?'제외(중복)':'']);
   });
   const s1=XLSX.utils.aoa_to_sheet(rows);
   s1['!cols']=[{wch:4},{wch:8},{wch:22},{wch:8},{wch:14},{wch:5},{wch:8},{wch:10},{wch:5},{wch:10},{wch:18},{wch:22},{wch:10}];

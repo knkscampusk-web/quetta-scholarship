@@ -425,9 +425,14 @@ function overallAvg(){
 function getAllWinners(){
   const ws=[];
   const r=S.results;
+  // 저장된 데이터에서 기존장학 fallback map 생성
+  const savedExMap={};
+  (S.accumulated[mkey()]?.winners||[]).forEach(w=>{if(w.기존장학)savedExMap[w.이름]=w.기존장학;});
+  const getEx=name=>S.exMap[name]||savedExMap[name]||'';
+
   const addA=(lbl,bc,혜택,s,val)=>{
     if(!s)return;
-    ws.push({lbl,bc,혜택,반:s.반,번호:s.번호,이름:s.이름,계열:s.계열,val,type:'auto',dup:[]});
+    ws.push({lbl,bc,혜택,반:s.반,번호:s.번호,이름:s.이름,계열:s.계열,val,type:'auto',기존장학:getEx(s.이름),dup:[]});
   };
   if(r){
     // 엑셀 업로드된 경우: 실시간 계산
@@ -444,7 +449,7 @@ function getAllWinners(){
   }
   MDEFS.forEach(d=>{
     (S.manual[d.id]||[]).filter(row=>row.이름).forEach(row=>{
-      ws.push({lbl:d.lbl,bc:d.bc,혜택:d.혜택,반:row.반||'',번호:row.학번||'',이름:row.이름,계열:row.계열||'',val:row.환산점수||row.비고||'',type:'manual',dup:[]});
+      ws.push({lbl:d.lbl,bc:d.bc,혜택:d.혜택,반:row.반||'',번호:row.학번||'',이름:row.이름,계열:row.계열||'',val:row.환산점수||row.비고||'',type:'manual',기존장학:getEx(row.이름),dup:[]});
     });
   });
   const nc={};ws.forEach(w=>nc[w.이름]=(nc[w.이름]||0)+1);

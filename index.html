@@ -141,7 +141,6 @@ input[type=checkbox]{cursor:pointer;accent-color:var(--gold);width:13px;height:1
   <div class="login-box">
     <h1>QUETTA</h1>
     <p>장학 관리 시스템</p>
-    <input type="email" id="li-email" placeholder="이메일" autocomplete="username">
     <input type="password" id="li-pw" placeholder="비밀번호" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
     <button onclick="doLogin()">로그인</button>
     <div class="login-err" id="li-err"></div>
@@ -174,7 +173,7 @@ const db=firebase.firestore();
 
 // ── Login ─────────────────────────────────
 async function doLogin(){
-  const em=document.getElementById('li-email').value.trim();
+  const em='admin@quetta.com'; // 고정 계정
   const pw=document.getElementById('li-pw').value;
   document.getElementById('li-err').textContent='';
   try{

@@ -450,7 +450,7 @@ function render(){
   const m=document.getElementById('main');if(!m)return;
   switch(S.tab){
     case 'results':m.innerHTML=pgResults();break;
-    case 'manual': m.innerHTML=pgManual();break;
+    case 'manual': m.innerHTML=pgManual();renderStudentList();break;
     case 'final':  m.innerHTML=pgFinal();break;
     case 'stats':  m.innerHTML=pgStats();break;
   }
@@ -567,24 +567,147 @@ function pgResults(){
 }
 
 // ── Page: 수기 입력 ─────────────────────────────────
-function pgManual(){
-  let h=`<div class="ph"><h2>수기 입력</h2><p>자동 산출 외 장학생 직접 입력 · Firestore 자동저장</p></div>`;
-  MDEFS.forEach(d=>{
-    const rows=S.manual[d.id]||[];
-    const ws2={반:'50px',학번:'70px',이름:'80px',환산점수:'80px',비고:'1fr'};
-    h+=`<div class="mg"><div class="mgh"><span class="bx ${d.bc}">${d.혜택}</span><span class="mgt">${d.lbl}</span></div><div class="mgb">`;
-    h+=`<div class="mgr">${d.cols.map(c=>`<div style="font-size:10px;color:var(--mu);text-align:center;${ws2[c]==='1fr'?'flex:1;min-width:60px;':`width:${ws2[c]};`}">${c}</div>`).join('')}<div style="width:22px"></div></div>`;
-    rows.forEach((row,ri)=>{
-      h+=`<div class="mgr">`;
-      d.cols.forEach(c=>{
-        const st=ws2[c]==='1fr'?'flex:1;min-width:60px':`width:${ws2[c]}`;
-        h+=`<input class="fi" style="${st}" type="text" value="${(row[c]||'').replace(/"/g,'&quot;')}" placeholder="${c}" oninput="upd('${d.id}',${ri},'${c}',this.value)">`;
-      });
-      h+=`<button class="rdel" onclick="delRow('${d.id}',${ri})">✕</button></div>`;
-    });
-    if(d.multi)h+=`<button class="addbtn" onclick="addRow('${d.id}')">+ 행 추가</button>`;
-    h+=`</div></div>`;
+// ── 수기입력 활성 장학 종류
+const ACTIVE_MANUAL=['dasung_in','dasung_nat','honor_in','honor_nat'];
+let _mSel=new Set();
+let _mSort='desc';
+
+function renderStudentList(){
+  const tbody=document.getElementById('m-tbody');if(!tbody)return;
+  const q=(document.getElementById('m-search')?.value||'').trim().toLowerCase();
+  const filterKye=(document.getElementById('m-filter-kye')?.value||'');
+  const students=S.curStudents||[];
+  let visible=students.map((s,i)=>({s,i})).filter(({s})=>{
+    const mq=!q||s.이름.includes(q)||String(s.반).includes(q)||String(s.번호).includes(q);
+    const mk=!filterKye||s.계열===filterKye;
+    return mq&&mk;
   });
+  if(_mSort==='desc')visible.sort((a,b)=>b.s.환산-a.s.환산);
+  else visible.sort((a,b)=>a.s.환산-b.s.환산);
+  const arrow=_mSort==='desc'?' ▼':' ▲';
+  const thEl=document.getElementById('m-th-hwan');
+  if(thEl)thEl.innerHTML='환산표점<span style="color:var(--gold)">'+arrow+'</span>';
+  let html='';
+  visible.forEach(({s,i})=>{
+    const sel=_mSel.has(i);
+    html+=`<tr style="cursor:pointer${sel?';background:var(--goldb)':''}" onclick="toggleMStudent(${i})">
+      <td style="width:24px;text-align:center;color:var(--gold);font-size:13px">${sel?'✓':''}</td>
+      <td>${s.반}반</td><td class="nn">${s.번호}</td>
+      <td class="nm">${s.이름}</td><td>${s.계열||'–'}</td>
+      <td class="nn">${s.환산.toFixed(1)}</td>
+    </tr>`;
+  });
+  if(!html)html='<tr><td colspan="6" class="empty" style="padding:14px">검색 결과 없음</td></tr>';
+  tbody.innerHTML=html;
+  updMAddBtn();
+}
+function toggleMStudent(i){
+  if(_mSel.has(i))_mSel.delete(i);else _mSel.add(i);
+  renderStudentList();
+}
+function toggleMSort(){
+  _mSort=(_mSort==='desc')?'asc':'desc';
+  renderStudentList();
+}
+function updMAddBtn(){
+  const btn=document.getElementById('m-add-btn');
+  const lbl=document.getElementById('m-sel-lbl');
+  if(!btn||!lbl)return;
+  const schId=document.getElementById('m-sch')?.value;
+  const cnt=_mSel.size;
+  if(cnt>0&&schId){btn.disabled=false;lbl.textContent=cnt+'명 선택됨';lbl.style.color='var(--gold2)';}
+  else if(cnt>0){btn.disabled=true;lbl.textContent=cnt+'명 선택됨 · 장학 종류를 선택하세요';lbl.style.color='var(--mu)';}
+  else{btn.disabled=true;lbl.textContent='학생을 선택하세요';lbl.style.color='var(--mu)';}
+}
+function addManualStudent(){
+  const schId=document.getElementById('m-sch')?.value;
+  if(!schId||!_mSel.size)return;
+  if(!S.manual[schId])S.manual[schId]=[];
+  const already=new Set((S.manual[schId]||[]).map(r=>String(r.학번)));
+  _mSel.forEach(i=>{
+    const s=S.curStudents[i];
+    if(already.has(String(s.번호)))return;
+    S.manual[schId].push({반:s.반,학번:s.번호,이름:s.이름,계열:s.계열,환산점수:s.환산.toFixed(1),비고:''});
+  });
+  _mSel=new Set();
+  autoSaveManual();render();
+}
+function delManualStudent(schId,ri){S.manual[schId].splice(ri,1);autoSaveManual();render();}
+function updManualNote(schId,ri,val){if(S.manual[schId]?.[ri])S.manual[schId][ri].비고=val;autoSaveManual();}
+
+function pgManual(){
+  const hasStudents=!!S.curStudents;
+  let h=`<div class="ph"><h2>수기 입력</h2><p>이번달 학생 명단에서 선택 · Firestore 자동저장</p></div>`;
+  h+=`<div class="card" style="margin-bottom:12px">
+    <div class="ch"><span class="ct">장학생 추가</span><span class="cs">${hasStudents?S.curStudents.length+'명 로드됨':'성적 파일 미업로드'}</span></div>
+    <div style="padding:12px 14px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+        <select id="m-sch" class="fi" style="min-width:230px" onchange="updMAddBtn()">
+          <option value="">— 장학 종류 선택 —</option>
+          <optgroup label="교습비 100%">
+            <option value="dasung_in">대성학원 전체 1등 (인문)</option>
+            <option value="dasung_nat">대성학원 전체 1등 (자연)</option>
+          </optgroup>
+          <optgroup label="매점상품권 5만원권">
+            <option value="honor_in">성적우수자 (인문)</option>
+            <option value="honor_nat">성적우수자 (자연)</option>
+          </optgroup>
+        </select>
+        <select id="m-filter-kye" class="fi" style="width:90px" onchange="renderStudentList()">
+          <option value="">계열 전체</option>
+          <option value="인문">인문</option>
+          <option value="자연">자연</option>
+        </select>
+        <div style="position:relative;flex:1;max-width:220px">
+          <input class="fi" id="m-search" type="text" placeholder="이름, 반, 번호 검색..." style="width:100%;padding-left:26px" oninput="renderStudentList()">
+          <span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--mu);pointer-events:none;font-size:11px">🔍</span>
+        </div>
+      </div>`;
+  if(!hasStudents){
+    h+=`<div class="notice">자동 산출 탭에서 이번달 성적 파일을 먼저 업로드해 주세요.</div>`;
+  } else {
+    h+=`<div style="border:1px solid var(--bo);border-radius:7px;overflow:hidden;max-height:220px;overflow-y:auto">
+      <table class="t">
+        <thead><tr>
+          <th></th><th>반</th><th>번호</th><th>이름</th><th>계열</th>
+          <th id="m-th-hwan" onclick="toggleMSort()" style="cursor:pointer;user-select:none;white-space:nowrap">환산표점 <span style="color:var(--gold)">▼</span></th>
+        </tr></thead>
+        <tbody id="m-tbody"></tbody>
+      </table>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:10px;gap:8px;align-items:center">
+      <span id="m-sel-lbl" style="font-size:12px;color:var(--mu)">학생을 선택하세요</span>
+      <button class="btn btn-g" id="m-add-btn" disabled onclick="addManualStudent()">+ 장학 추가</button>
+    </div>`;
+  }
+  h+=`</div></div>`;
+  // 입력된 수기 장학생 목록
+  const allEntries=[];
+  ACTIVE_MANUAL.forEach(id=>{
+    (S.manual[id]||[]).forEach((r,ri)=>{if(r.이름)allEntries.push({...r,schId:id,ri});});
+  });
+  h+=`<div class="card"><div class="ch"><span class="ct">입력된 수기 장학생</span><span class="cs">${allEntries.length}건</span></div>`;
+  if(!allEntries.length){
+    h+=`<div class="empty">아직 추가된 학생이 없습니다</div>`;
+  } else {
+    h+=`<div class="tw"><table class="t"><thead><tr>
+      <th>장학명</th><th>혜택</th><th>반</th><th>번호</th><th>이름</th><th>계열</th><th>환산</th><th>비고</th><th></th>
+    </tr></thead><tbody>`;
+    allEntries.forEach(r=>{
+      const def=MDEFS.find(d=>d.id===r.schId);
+      h+=`<tr>
+        <td><span class="bx ${def.bc}">${def.lbl}</span></td>
+        <td style="font-size:11px;color:var(--mu)">${def.혜택}</td>
+        <td>${r.반}반</td><td class="nn">${r.학번||''}</td>
+        <td class="nm">${r.이름}</td><td>${r.계열||'–'}</td>
+        <td class="nn">${r.환산점수||'–'}</td>
+        <td><input class="fi" style="width:100px" placeholder="비고" value="${(r.비고||'').replace(/"/g,'&quot;')}" oninput="updManualNote('${r.schId}',${r.ri},this.value)"></td>
+        <td><button class="rdel" onclick="delManualStudent('${r.schId}',${r.ri})">✕</button></td>
+      </tr>`;
+    });
+    h+=`</tbody></table></div>`;
+  }
+  h+=`</div>`;
   return h;
 }
 
@@ -693,18 +816,50 @@ function buildLineChart(months, acc){
 function pgStats(){
   let h=`<div class="ph"><h2>통계 & 누적</h2><p>반별 환산표점 평균 · 월별 이력 · 학생별 수상 통계</p></div>`;
   if(S.curStudents){
-    h+=`<div class="sec-title">📊 ${S.curYear}년 ${S.curMonth}월 반별 환산표점 평균</div><div class="stats-grid">`;
-    calcClassStats().forEach(s=>{
-      h+=`<div class="sc"><div class="ban">${s.반}반 <span style="font-size:11px;color:var(--mu);font-weight:400">(${s.인원}명)</span></div>
-        <div class="row"><span class="k">환산표점 평균</span><span class="v" style="color:var(--gold2)">${s.환산.toFixed(1)}</span></div>
-        <div class="row"><span class="k">국어 표준</span><span class="v">${s.국어.toFixed(1)}</span></div>
-        <div class="row"><span class="k">수학 표준</span><span class="v">${s.수학.toFixed(1)}</span></div>
-        <div class="row"><span class="k">탐구 표준 합</span><span class="v">${(s.탐1+s.탐2).toFixed(1)}</span></div>
-      </div>`;
+    // 이번달 통계
+    const curStats=[...calcClassStats()].sort((a,b)=>b.환산-a.환산);
+    const curOvg=overallAvg();
+    // 지난달 통계 (Firestore 누적에서 바로 직전 저장 월)
+    const allMkeys=Object.keys(S.accumulated).sort();
+    const curMk=mkey();
+    const prevMk=allMkeys.filter(k=>k<curMk).slice(-1)[0]||null;
+    const prevStats=prevMk?(S.accumulated[prevMk].classStats||[]):[];
+    const prevOvg=prevMk?(S.accumulated[prevMk].overallAvg||null):null;
+    const prevMap={};prevStats.forEach(s=>{prevMap[s.반]=s;});
+    const prevLbl=prevMk?(S.accumulated[prevMk].label||fmtKey(prevMk)):'';
+    h+=`<div class="sec-title">📊 ${S.curYear}년 ${S.curMonth}월 반별 환산표점 평균 <span style="font-size:11px;color:var(--mu);font-weight:400">(이번달 내림차순${prevLbl?' · '+prevLbl+' 비교':''})</span></div>`;
+    h+=`<div class="card"><div class="tw"><table class="t"><thead><tr>
+      <th>순위</th><th>반</th><th>인원</th>
+      <th>이번달 환산</th><th>국어</th><th>수학</th><th>탐구합산</th>
+      ${prevLbl?`<th>지난달 환산</th><th>변화</th>`:''}
+    </tr></thead><tbody>`;
+    curStats.forEach((s,idx)=>{
+      const prev=prevMap[s.반];
+      const diff=prev?(s.환산-prev.환산):null;
+      const diffStr=diff===null?'–':(diff>0?`<span style="color:var(--green);font-weight:600">▲${diff.toFixed(1)}</span>`:diff<0?`<span style="color:var(--red);font-weight:600">▼${Math.abs(diff).toFixed(1)}</span>`:`<span style="color:var(--mu)">–</span>`);
+      h+=`<tr>
+        <td style="color:var(--mu);font-size:11px">${idx+1}</td>
+        <td style="font-weight:700;color:var(--gold2)">${s.반}반</td>
+        <td style="color:var(--mu)">${s.인원}명</td>
+        <td style="font-weight:700;color:var(--gold2)">${s.환산.toFixed(1)}</td>
+        <td>${s.국어.toFixed(1)}</td>
+        <td>${s.수학.toFixed(1)}</td>
+        <td>${(s.탐1+s.탐2).toFixed(1)}</td>
+        ${prevLbl?`<td style="color:var(--mu)">${prev?prev.환산.toFixed(1):'–'}</td><td>${diffStr}</td>`:''}
+      </tr>`;
     });
-    h+=`<div class="sc" style="border-color:rgba(201,168,76,.4)"><div class="ban" style="color:var(--gold2)">전 체 <span style="font-size:11px;font-weight:400;color:var(--mu)">(${S.curStudents.length}명)</span></div>
-      <div class="row"><span class="k">환산표점 평균</span><span class="v" style="color:var(--gold2)">${overallAvg().toFixed(1)}</span></div></div>`;
-    h+=`</div>`;
+    // 전체 행
+    const ovgDiff=prevOvg?(curOvg-prevOvg):null;
+    const ovgDiffStr=ovgDiff===null?'–':(ovgDiff>0?`<span style="color:var(--green);font-weight:600">▲${ovgDiff.toFixed(1)}</span>`:ovgDiff<0?`<span style="color:var(--red);font-weight:600">▼${Math.abs(ovgDiff).toFixed(1)}</span>`:`<span style="color:var(--mu)">–</span>`);
+    h+=`<tr style="background:var(--goldb);font-weight:700">
+      <td style="color:var(--mu)">–</td>
+      <td style="color:var(--gold2)">전 체</td>
+      <td style="color:var(--mu)">${S.curStudents.length}명</td>
+      <td style="color:var(--gold2)">${curOvg.toFixed(1)}</td>
+      <td colspan="3" style="color:var(--mu);font-size:11px">전체 평균</td>
+      ${prevLbl?`<td style="color:var(--mu)">${prevOvg?prevOvg.toFixed(1):'–'}</td><td>${ovgDiffStr}</td>`:''}
+    </tr>`;
+    h+=`</tbody></table></div></div>`;
   } else {
     h+=`<div class="notice">이번달 성적 파일을 업로드하면 반별 평균이 표시됩니다.</div>`;
   }

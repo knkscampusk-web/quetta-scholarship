@@ -213,13 +213,18 @@ const MDEFS=[
 ];
 
 // ── State ─────────────────────────────────
+const _now=new Date();
 let S={
-  tab:'results',curYear:'2026',curMonth:'3',monthConfirmed:false,
+  tab:'results',
+  curYear:String(_now.getFullYear()),
+  curMonth:String(_now.getMonth()+1),
+  monthConfirmed:false,
   curStudents:null,prevStudents:null,
   curFile:null,prevFile:null,exFile:null,
   exMap:{},results:null,manual:{},
   excluded:new Set(),accumulated:{},
   dbg:'',err:null,syncMsg:'',userEmail:'',
+  finalViewMonth:null, // null=이번달, 'YYYY-MM'=과거월 조회
 };
 let _ws=[];
 MDEFS.forEach(d=>{S.manual[d.id]=[erow(d)];});
@@ -237,15 +242,11 @@ async function loadFromFirestore(){
     const snap=await db.collection('quetta_data').get();
     S.accumulated={};
     snap.forEach(doc=>{S.accumulated[doc.id]=doc.data();});
-    // 이번달 manual 불러오기
+    // 이번달 manual/excluded 불러오기
     const mk=mkey();
-    if(S.accumulated[mk]&&S.accumulated[mk].manual){
-      MDEFS.forEach(d=>{
-        if(S.accumulated[mk].manual[d.id])S.manual[d.id]=S.accumulated[mk].manual[d.id];
-      });
-    }
-    if(S.accumulated[mk]&&S.accumulated[mk].excluded){
-      S.excluded=new Set(S.accumulated[mk].excluded);
+    if(S.accumulated[mk]){
+      if(S.accumulated[mk].manual)MDEFS.forEach(d=>{if(S.accumulated[mk].manual[d.id])S.manual[d.id]=S.accumulated[mk].manual[d.id];});
+      if(S.accumulated[mk].excluded)S.excluded=new Set(S.accumulated[mk].excluded);
     }
     setSyncMsg('✓ 불러오기 완료');
   }catch(e){setSyncMsg('⚠ 불러오기 실패: '+e.message);}
@@ -485,7 +486,7 @@ function renderSB(){
 async function loadMonthData(){
   const mk=mkey();
   MDEFS.forEach(d=>{S.manual[d.id]=[erow(d)];});
-  S.excluded=new Set();S.monthConfirmed=false;
+  S.excluded=new Set();S.monthConfirmed=false;S.finalViewMonth=null;
   if(S.accumulated[mk]){
     if(S.accumulated[mk].manual)MDEFS.forEach(d=>{if(S.accumulated[mk].manual[d.id])S.manual[d.id]=S.accumulated[mk].manual[d.id];});
     if(S.accumulated[mk].excluded)S.excluded=new Set(S.accumulated[mk].excluded);
@@ -713,14 +714,64 @@ function pgManual(){
 
 // ── Page: 최종 명단 ─────────────────────────────────
 function pgFinal(){
+  const months=Object.keys(S.accumulated).sort();
+  const pastMonths=months.filter(k=>k!==mkey());
+
+  // ── 과거 월 조회 모드
+  if(S.finalViewMonth&&S.accumulated[S.finalViewMonth]){
+    const d=S.accumulated[S.finalViewMonth];
+    const winners=d.winners||[];
+    const act=winners.filter(w=>!w.excluded).length;
+    let h=`<div class="ph"><h2>최종 명단</h2><p>${d.label||fmtKey(S.finalViewMonth)} 저장본 조회 (읽기 전용)</p></div>`;
+    h+=`<div class="btn-row">
+      <button class="btn" onclick="S.finalViewMonth=null;render()">← 이번달 (${S.curYear}년 ${S.curMonth}월)로 돌아가기</button>
+      <select class="fi" onchange="S.finalViewMonth=this.value||null;render()">
+        <option value="">— 월 선택 —</option>
+        ${months.map(k=>`<option value="${k}"${k===S.finalViewMonth?' selected':''}>${fmtKey(k)}</option>`).join('')}
+      </select>
+    </div>`;
+    h+=`<div style="background:rgba(91,155,213,.08);border:1px solid rgba(91,155,213,.2);border-radius:7px;padding:8px 12px;font-size:12px;color:var(--blue);margin-bottom:12px">
+      📁 ${d.label||fmtKey(S.finalViewMonth)} 저장본 · 총 ${winners.length}건 | 제외 ${winners.length-act}건 | 최종 ${act}건 · 저장일: ${d.savedAt?new Date(d.savedAt).toLocaleDateString('ko-KR'):'–'}
+    </div>`;
+    if(!winners.length)return h+`<div class="empty">저장된 장학생이 없습니다.</div>`;
+    h+=`<div class="card"><div class="tw"><table class="t"><thead><tr>
+      <th>상태</th><th>장학명</th><th>혜택</th><th>반</th><th>번호/학번</th><th>이름</th><th>계열</th><th>환산/향상</th><th>기존장학</th><th>중복여부</th>
+    </tr></thead><tbody>`;
+    winners.forEach(w=>{
+      const ex=w.excluded;
+      const dup=w.dup?.length?`<span class="dup">중복</span>`:'';
+      const dupFull=w.dup?.length?w.dup.join(', '):'–';
+      const _exg=w.기존장학||'';const exg=_exg?`<span class="bx bq">${_exg}</span>`:'–';
+      h+=`<tr class="${ex?'ex':''}">
+        <td style="font-size:11px;color:${ex?'var(--red)':'var(--green)'}">${ex?'제외':'✓'}</td>
+        <td><span class="bx ${w.bc}">${w.lbl}</span></td>
+        <td style="font-size:11px;color:var(--mu)">${w.혜택}</td>
+        <td>${w.반?w.반+'반':''}</td>
+        <td class="nn">${w.번호||'–'}</td>
+        <td class="nm">${w.이름}${dup}</td>
+        <td>${w.계열||'–'}</td>
+        <td class="nn">${w.val}</td>
+        <td>${exg}</td>
+        <td style="font-size:11px;color:${w.dup?.length?'var(--red)':'var(--mu)'}">${dupFull}</td>
+      </tr>`;
+    });
+    h+=`</tbody></table></div></div>`;
+    return h;
+  }
+
+  // ── 이번달 작업 모드
   _ws=getAllWinners();
   const act=_ws.filter((_,i)=>!S.excluded.has(wkey(_ws[i]))).length;
   let h=`<div class="ph"><h2>최종 명단</h2><p>${S.curYear}년 ${S.curMonth}월 · 총 ${_ws.length}건 | 제외 ${S.excluded.size}건 | 최종 ${act}건</p></div>`;
   h+=`<div class="btn-row">
     <button class="btn btn-g" onclick="exportExcel()">⬇ 엑셀 다운로드</button>
     <button class="btn btn-gr" onclick="saveToFirestore().then(()=>render())">☁ 이번달 저장</button>
-    <span style="font-size:11px;color:var(--mu)">체크 = 제외(줄 긋기) · 자동저장됨</span>
-  </div>`;
+    ${pastMonths.length?`<select class="fi" style="margin-left:auto" onchange="if(this.value){S.finalViewMonth=this.value;render();}this.value=''">
+      <option value="">📅 지난달 명단 조회...</option>
+      ${pastMonths.slice().reverse().map(k=>`<option value="${k}">${fmtKey(k)}</option>`).join('')}
+    </select>`:''}
+  </div>
+  <div style="font-size:11px;color:var(--mu);margin-bottom:10px">체크 = 제외(줄 긋기) · Firestore 자동저장</div>`;
   if(!_ws.length)return h+`<div class="empty">산출된 장학생이 없습니다.</div>`;
   h+=`<div class="card"><div class="tw"><table class="t"><thead><tr>
     <th>제외</th><th>장학명</th><th>혜택</th><th>반</th><th>번호/학번</th><th>이름</th><th>계열</th><th>환산/향상</th><th>기존장학</th><th>중복여부</th>

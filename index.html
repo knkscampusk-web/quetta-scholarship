@@ -9,12 +9,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
-  --bg:#0d1b2a;--bg2:#162032;--bg3:#1e2d40;--bg4:#253550;
-  --gold:#c9a84c;--gold2:#e8c97a;--goldb:rgba(201,168,76,.12);
-  --w:#f4f1eb;--w2:#ece8df;
-  --mu:rgba(244,241,235,.45);--mu2:rgba(244,241,235,.22);--mu3:rgba(244,241,235,.1);
-  --bo:rgba(244,241,235,.12);--bo2:rgba(244,241,235,.06);
-  --green:#5da87a;--blue:#5b9bd5;--red:#d97c6a;--amber:#d4a039;
+  --bg:#f9f9f7;--bg2:#ffffff;--bg3:#f0efe9;--bg4:#e8e7e0;
+  --gold:#b5681e;--gold2:#8a4e16;--goldb:rgba(181,104,30,.1);
+  --w:#1a1a18;--w2:#2e2e2a;
+  --mu:#6b6b63;--mu2:#8c8c82;--mu3:rgba(26,26,24,.06);
+  --bo:#d8d8d0;--bo2:#e8e8e0;
+  --green:#1e7a45;--blue:#1a5fa0;--red:#c0362a;--amber:#a06010;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:var(--bg);color:var(--w);font-size:13px;line-height:1.6;min-height:100vh}
@@ -225,6 +225,11 @@ let _ws=[];
 MDEFS.forEach(d=>{S.manual[d.id]=[erow(d)];});
 function erow(d){const r={};d.cols.forEach(c=>r[c]='');return r;}
 function mkey(){return`${S.curYear}-${S.curMonth.padStart(2,'0')}`;}
+function fmtKey(k){
+  // "2026-04" → "2026년 4월"
+  const m=k.match(/^(\d{4})-(\d{2})$/);
+  return m?`${m[1]}년 ${parseInt(m[2])}월`:k;
+}
 
 // ── Firestore ─────────────────────────────────
 async function loadFromFirestore(){
@@ -654,7 +659,7 @@ function buildLineChart(months, acc){
   }
   // X축 라벨
   months.forEach((k,i)=>{
-    const lbl=(acc[k].label||k).replace(/\d{4}년 /,'');
+    const lbl=(acc[k].label||fmtKey(k)).replace(/\d{4}년 /,'');
     svg+=`<text x="${xp(i)}" y="${H-4}" text-anchor="middle" font-size="9" fill="rgba(244,241,235,.5)">${lbl}</text>`;
     svg+=`<line x1="${xp(i)}" y1="${PT}" x2="${xp(i)}" y2="${H-PB}" stroke="rgba(244,241,235,.04)" stroke-width="1"/>`;
   });
@@ -710,7 +715,7 @@ function pgStats(){
     months.slice().reverse().forEach(k=>{
       const d=S.accumulated[k];
       const act=(d.winners||[]).filter(w=>!w.excluded).length;
-      h+=`<tr><td style="color:var(--gold2);font-weight:500">${d.label||k}</td><td>${(d.winners||[]).length}건</td><td>${act}건</td><td>${d.overallAvg?d.overallAvg.toFixed(1):'–'}</td><td style="font-size:11px;color:var(--mu)">${d.savedAt?new Date(d.savedAt).toLocaleDateString('ko-KR'):'–'}</td></tr>`;
+      h+=`<tr><td style="color:var(--gold2);font-weight:500">${d.label||fmtKey(k)}</td><td>${(d.winners||[]).length}건</td><td>${act}건</td><td>${d.overallAvg?d.overallAvg.toFixed(1):'–'}</td><td style="font-size:11px;color:var(--mu)">${d.savedAt?new Date(d.savedAt).toLocaleDateString('ko-KR'):'–'}</td></tr>`;
     });
     h+=`</tbody></table></div></div>`;
 

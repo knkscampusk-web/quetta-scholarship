@@ -815,19 +815,28 @@ function buildLineChart(months, acc){
 // ── Page: 통계 & 누적 ─────────────────────────────────
 function pgStats(){
   let h=`<div class="ph"><h2>통계 & 누적</h2><p>반별 환산표점 평균 · 월별 이력 · 학생별 수상 통계</p></div>`;
-  if(S.curStudents){
-    // 이번달 통계
-    const curStats=[...calcClassStats()].sort((a,b)=>b.환산-a.환산);
-    const curOvg=overallAvg();
-    // 지난달 통계 (Firestore 누적에서 바로 직전 저장 월)
-    const allMkeys=Object.keys(S.accumulated).sort();
-    const curMk=mkey();
-    const prevMk=allMkeys.filter(k=>k<curMk).slice(-1)[0]||null;
-    const prevStats=prevMk?(S.accumulated[prevMk].classStats||[]):[];
-    const prevOvg=prevMk?(S.accumulated[prevMk].overallAvg||null):null;
-    const prevMap={};prevStats.forEach(s=>{prevMap[s.반]=s;});
-    const prevLbl=prevMk?(S.accumulated[prevMk].label||fmtKey(prevMk)):'';
-    h+=`<div class="sec-title">📊 ${S.curYear}년 ${S.curMonth}월 반별 환산표점 평균 <span style="font-size:11px;color:var(--mu);font-weight:400">(이번달 내림차순${prevLbl?' · '+prevLbl+' 비교':''})</span></div>`;
+  // 이번달 반별 통계: 실시간 또는 Firestore 저장본 fallback
+  const curMk=mkey();
+  const savedCur=S.accumulated[curMk];
+  const curStats=S.curStudents
+    ? [...calcClassStats()].sort((a,b)=>b.환산-a.환산)
+    : [...(savedCur?.classStats||[])].sort((a,b)=>b.환산-a.환산);
+  const curOvg=S.curStudents ? overallAvg() : (savedCur?.overallAvg||null);
+  const curTotalN=S.curStudents ? S.curStudents.length : (curStats.reduce((s,v)=>s+(v.인원||0),0)||null);
+  const hasCurData=curStats.length>0;
+
+  // 지난달: 현재 월보다 이전 저장 중 가장 최근
+  const allMkeys=Object.keys(S.accumulated).sort();
+  const prevMk=allMkeys.filter(k=>k<curMk).slice(-1)[0]||null;
+  const prevStats=prevMk?(S.accumulated[prevMk].classStats||[]):[];
+  const prevOvg=prevMk?(S.accumulated[prevMk].overallAvg||null):null;
+  const prevMap={};prevStats.forEach(s=>{prevMap[s.반]=s;});
+  const prevLbl=prevMk?(S.accumulated[prevMk].label||fmtKey(prevMk)):'';
+  const curLbl=savedCur?.label||`${S.curYear}년 ${S.curMonth}월`;
+
+  if(hasCurData){
+    h+=`<div class="sec-title">📊 ${curLbl} 반별 환산표점 평균 <span style="font-size:11px;color:var(--mu);font-weight:400">(이번달 내림차순${prevLbl?' · '+prevLbl+' 비교':''})</span></div>`;
+    if(!S.curStudents)h+=`<div class="notice" style="margin-bottom:8px">📂 저장된 데이터 표시 중 · 새 파일 업로드 시 갱신됩니다</div>`;
     h+=`<div class="card"><div class="tw"><table class="t"><thead><tr>
       <th>순위</th><th>반</th><th>인원</th>
       <th>이번달 환산</th><th>국어</th><th>수학</th><th>탐구합산</th>
@@ -835,33 +844,34 @@ function pgStats(){
     </tr></thead><tbody>`;
     curStats.forEach((s,idx)=>{
       const prev=prevMap[s.반];
-      const diff=prev?(s.환산-prev.환산):null;
+      const diff=prev!=null?(+s.환산-(+prev.환산)):null;
       const diffStr=diff===null?'–':(diff>0?`<span style="color:var(--green);font-weight:600">▲${diff.toFixed(1)}</span>`:diff<0?`<span style="color:var(--red);font-weight:600">▼${Math.abs(diff).toFixed(1)}</span>`:`<span style="color:var(--mu)">–</span>`);
       h+=`<tr>
         <td style="color:var(--mu);font-size:11px">${idx+1}</td>
         <td style="font-weight:700;color:var(--gold2)">${s.반}반</td>
         <td style="color:var(--mu)">${s.인원}명</td>
-        <td style="font-weight:700;color:var(--gold2)">${s.환산.toFixed(1)}</td>
-        <td>${s.국어.toFixed(1)}</td>
-        <td>${s.수학.toFixed(1)}</td>
-        <td>${(s.탐1+s.탐2).toFixed(1)}</td>
-        ${prevLbl?`<td style="color:var(--mu)">${prev?prev.환산.toFixed(1):'–'}</td><td>${diffStr}</td>`:''}
+        <td style="font-weight:700;color:var(--gold2)">${(+s.환산).toFixed(1)}</td>
+        <td>${(+s.국어).toFixed(1)}</td>
+        <td>${(+s.수학).toFixed(1)}</td>
+        <td>${((+s.탐1)+(+s.탐2)).toFixed(1)}</td>
+        ${prevLbl?`<td style="color:var(--mu)">${prev?(+prev.환산).toFixed(1):'–'}</td><td>${diffStr}</td>`:''}
       </tr>`;
     });
-    // 전체 행
-    const ovgDiff=prevOvg?(curOvg-prevOvg):null;
-    const ovgDiffStr=ovgDiff===null?'–':(ovgDiff>0?`<span style="color:var(--green);font-weight:600">▲${ovgDiff.toFixed(1)}</span>`:ovgDiff<0?`<span style="color:var(--red);font-weight:600">▼${Math.abs(ovgDiff).toFixed(1)}</span>`:`<span style="color:var(--mu)">–</span>`);
-    h+=`<tr style="background:var(--goldb);font-weight:700">
-      <td style="color:var(--mu)">–</td>
-      <td style="color:var(--gold2)">전 체</td>
-      <td style="color:var(--mu)">${S.curStudents.length}명</td>
-      <td style="color:var(--gold2)">${curOvg.toFixed(1)}</td>
-      <td colspan="3" style="color:var(--mu);font-size:11px">전체 평균</td>
-      ${prevLbl?`<td style="color:var(--mu)">${prevOvg?prevOvg.toFixed(1):'–'}</td><td>${ovgDiffStr}</td>`:''}
-    </tr>`;
+    if(curOvg){
+      const ovgDiff=prevOvg?(curOvg-prevOvg):null;
+      const ovgDiffStr=ovgDiff===null?'–':(ovgDiff>0?`<span style="color:var(--green);font-weight:600">▲${ovgDiff.toFixed(1)}</span>`:ovgDiff<0?`<span style="color:var(--red);font-weight:600">▼${Math.abs(ovgDiff).toFixed(1)}</span>`:`<span style="color:var(--mu)">–</span>`);
+      h+=`<tr style="background:var(--goldb);font-weight:700">
+        <td style="color:var(--mu)">–</td>
+        <td style="color:var(--gold2)">전 체</td>
+        <td style="color:var(--mu)">${curTotalN?curTotalN+'명':'–'}</td>
+        <td style="color:var(--gold2)">${curOvg.toFixed(1)}</td>
+        <td colspan="3" style="color:var(--mu);font-size:11px">전체 평균</td>
+        ${prevLbl?`<td style="color:var(--mu)">${prevOvg?prevOvg.toFixed(1):'–'}</td><td>${ovgDiffStr}</td>`:''}
+      </tr>`;
+    }
     h+=`</tbody></table></div></div>`;
   } else {
-    h+=`<div class="notice">이번달 성적 파일을 업로드하면 반별 평균이 표시됩니다.</div>`;
+    h+=`<div class="notice">이번달 성적 파일을 업로드하거나, 최종 명단 저장 후 이용하세요.</div>`;
   }
   const months=Object.keys(S.accumulated).sort();
   if(months.length){

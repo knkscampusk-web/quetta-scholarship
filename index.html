@@ -18,70 +18,61 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:var(--bg);color:var(--w);font-size:13px;line-height:1.6;min-height:100vh}
-
-/* ── Login ── */
 #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh}
 .login-box{background:var(--bg2);border:1px solid var(--bo);border-radius:14px;padding:36px 32px;width:340px;text-align:center}
-.login-box h1{font-size:22px;font-weight:700;color:var(--gold);letter-spacing:.05em;margin-bottom:4px}
+.login-box h1{font-size:22px;font-weight:700;color:var(--gold);margin-bottom:4px}
 .login-box p{font-size:12px;color:var(--mu);margin-bottom:28px}
 .login-box input{width:100%;padding:10px 12px;background:var(--bg3);border:1px solid var(--bo);border-radius:7px;color:var(--w);font-size:13px;margin-bottom:10px;font-family:inherit}
-.login-box input:focus{outline:none;border-color:rgba(201,168,76,.5)}
-.login-box button{width:100%;padding:11px;background:var(--gold);border:none;border-radius:7px;color:var(--bg);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px}
+.login-box input:focus{outline:none;border-color:rgba(181,104,30,.5)}
+.login-box button{width:100%;padding:11px;background:var(--gold);border:none;border-radius:7px;color:var(--bg);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
 .login-box button:hover{background:var(--gold2)}
 .login-err{font-size:12px;color:var(--red);margin-top:8px;min-height:18px}
-
-/* ── App Layout ── */
 .app{display:flex;min-height:100vh}
-.sb{width:210px;min-width:210px;background:var(--bg2);border-right:1px solid var(--bo);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
-.brand{padding:18px 16px 14px;border-bottom:1px solid var(--bo)}
-.brand h1{font-size:15px;font-weight:700;color:var(--gold);letter-spacing:.05em}
+.sb{width:196px;min-width:196px;background:var(--bg2);border-right:1px solid var(--bo);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.brand{padding:16px 14px 12px;border-bottom:1px solid var(--bo)}
+.brand h1{font-size:15px;font-weight:700;color:var(--gold)}
 .brand p{font-size:10px;color:var(--mu);margin-top:2px;text-transform:uppercase;letter-spacing:.07em}
-nav{padding:10px 8px;flex:1}
-.nsec{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--mu);padding:0 8px;margin:12px 0 4px}
+nav{padding:8px 6px;flex:1}
+.nsec{font-size:9px;text-transform:uppercase;letter-spacing:.12em;color:var(--mu);padding:0 8px;margin:10px 0 3px}
 .ni{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:6px;cursor:pointer;color:var(--mu);font-size:12px;transition:all .15s;user-select:none}
 .ni:hover{background:var(--mu3);color:var(--w2)}
 .ni.on{background:var(--goldb);color:var(--gold2);font-weight:500}
 .ni i{font-size:13px;width:16px;text-align:center;font-style:normal}
-.mbar{padding:12px 14px;border-top:1px solid var(--bo)}
-.mbar label{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px}
-.mbar-row{display:flex;gap:4px;align-items:center;font-size:11px;color:var(--mu)}
-.mbar input{background:var(--bg3);border:1px solid var(--bo);border-radius:5px;color:var(--w);font-size:12px;padding:4px 6px}
-.mbar input:focus{outline:none;border-color:var(--gold)}
-.my{font-size:14px;font-weight:700;color:var(--gold2);margin-top:6px}
-.logout-btn{margin:10px 14px;padding:6px;background:transparent;border:1px solid var(--bo);border-radius:6px;color:var(--mu);font-size:11px;cursor:pointer;width:calc(100% - 28px);font-family:inherit}
-.logout-btn:hover{background:var(--mu3);color:var(--w2)}
-.user-info{font-size:10px;color:var(--mu);padding:0 14px 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-main{flex:1;min-width:0;padding:24px 28px;overflow-x:hidden}
-
-/* ── Components ── */
-.ph{margin-bottom:18px}
+.sb-bottom{padding:8px 12px;border-top:1px solid var(--bo)}
+.user-info{font-size:10px;color:var(--mu);margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sync-msg{font-size:10px;color:var(--mu);margin-bottom:5px;min-height:14px}
+.logout-btn{padding:5px;background:transparent;border:1px solid var(--bo);border-radius:5px;color:var(--mu);font-size:11px;cursor:pointer;width:100%;font-family:inherit}
+.logout-btn:hover{background:var(--mu3)}
+main{flex:1;min-width:0;padding:22px 26px;overflow-x:hidden}
+.ph{margin-bottom:16px}
 .ph h2{font-size:18px;font-weight:700}
 .ph p{font-size:12px;color:var(--mu);margin-top:3px}
-.urow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.urow{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
 .ub{border:1.5px dashed var(--bo);border-radius:10px;padding:12px;cursor:pointer;transition:all .15s;text-align:center}
-.ub:hover,.ub.drag{border-color:rgba(201,168,76,.45);background:var(--bg4)}
-.ub.done{border-style:solid;border-color:rgba(93,168,122,.4);background:var(--bg3)}
+.ub:hover,.ub.drag{border-color:rgba(181,104,30,.4);background:var(--bg4)}
+.ub.done{border-style:solid;border-color:rgba(30,122,69,.4);background:var(--bg3)}
 .ub .lbl{font-size:11px;font-weight:500;color:var(--w2);margin-bottom:2px}
 .ub .sub{font-size:10px;color:var(--mu)}
 .ub .fn{font-size:10px;color:var(--green);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ub .rst{font-size:10px;color:var(--mu);text-decoration:underline;cursor:pointer;margin-top:2px}
-.dbg{background:var(--bg3);border-radius:7px;padding:7px 11px;font-size:10px;color:var(--mu);font-family:monospace;line-height:1.7;white-space:pre-wrap;margin-bottom:12px}
-.mets{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:18px}
-.met{background:var(--bg3);border:1px solid var(--bo);border-radius:9px;padding:12px 14px;position:relative;overflow:hidden}
+.dbg{background:var(--bg3);border-radius:7px;padding:7px 11px;font-size:10px;color:var(--mu);font-family:monospace;line-height:1.7;white-space:pre-wrap;margin-bottom:10px}
+.mets{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:16px}
+.met{background:var(--bg3);border:1px solid var(--bo);border-radius:9px;padding:10px 12px;position:relative;overflow:hidden}
 .met::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--gold);opacity:.4}
-.met .l{font-size:10px;color:var(--mu);letter-spacing:.07em;text-transform:uppercase;margin-bottom:4px}
-.met .v{font-size:22px;font-weight:700}
+.met .l{font-size:10px;color:var(--mu);letter-spacing:.07em;text-transform:uppercase;margin-bottom:3px}
+.met .v{font-size:20px;font-weight:700}
 .card{background:var(--bg2);border:1px solid var(--bo);border-radius:10px;overflow:hidden;margin-bottom:12px}
 .ch{padding:9px 14px;background:var(--bg3);border-bottom:1px solid var(--bo);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .ch .ct{font-size:12px;font-weight:500;color:var(--w2)}
 .ch .cs{font-size:10px;color:var(--mu);margin-left:auto}
 .tw{overflow-x:auto}
 table.t{width:100%;border-collapse:collapse;font-size:12px}
-table.t th{padding:5px 10px;text-align:left;font-weight:500;border-bottom:1px solid var(--bo);font-size:10px;color:var(--mu);white-space:nowrap;text-transform:uppercase;letter-spacing:.05em}
-table.t td{padding:6px 10px;border-bottom:1px solid var(--bo2);white-space:nowrap;color:var(--w2)}
+table.t th{padding:5px 9px;text-align:left;font-weight:500;border-bottom:1px solid var(--bo);font-size:10px;color:var(--mu);white-space:nowrap;text-transform:uppercase;letter-spacing:.04em}
+table.t td{padding:5px 9px;border-bottom:1px solid var(--bo2);white-space:nowrap;color:var(--w2)}
 table.t tr:last-child td{border-bottom:none}
 table.t tr:hover td{background:var(--mu3)}
 table.t tr.ex td{text-decoration:line-through;opacity:.45}
+table.t th.num,table.t td.num{text-align:right}
 .nm{font-weight:500;color:var(--w)}
 .nn{font-family:monospace}
 .dim{color:var(--mu);font-size:11px}
@@ -89,45 +80,41 @@ table.t tr.ex td{text-decoration:line-through;opacity:.45}
 .neg{color:var(--red)}
 .rk1{color:var(--amber);font-weight:700}
 .bx{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:500;white-space:nowrap}
-.bq{background:rgba(201,168,76,.18);color:var(--gold2);border:1px solid rgba(201,168,76,.3)}
-.bd{background:rgba(93,168,122,.15);color:var(--green);border:1px solid rgba(93,168,122,.25)}
-.bm{background:rgba(91,155,213,.15);color:var(--blue);border:1px solid rgba(91,155,213,.25)}
-.bg{background:rgba(80,190,100,.15);color:#5dc870;border:1px solid rgba(80,190,100,.25)}
-.bb{background:rgba(212,160,57,.15);color:var(--amber);border:1px solid rgba(212,160,57,.25)}
-.dup{display:inline-flex;align-items:center;padding:1px 5px;border-radius:8px;background:rgba(217,124,106,.2);color:var(--red);font-size:10px;margin-left:4px;border:.5px solid rgba(217,124,106,.3)}
-.mg{background:var(--bg2);border:1px solid var(--bo);border-radius:10px;overflow:hidden;margin-bottom:10px}
-.mgh{padding:8px 14px;background:var(--bg3);border-bottom:1px solid var(--bo);display:flex;align-items:center;gap:8px}
-.mgt{font-size:12px;font-weight:500}
-.mgb{padding:10px 14px}
-.mgr{display:flex;gap:5px;margin-bottom:5px;align-items:center}
+.bq{background:rgba(181,104,30,.15);color:var(--gold2);border:1px solid rgba(181,104,30,.3)}
+.bd{background:rgba(30,122,69,.12);color:var(--green);border:1px solid rgba(30,122,69,.25)}
+.bm{background:rgba(26,95,160,.12);color:var(--blue);border:1px solid rgba(26,95,160,.25)}
+.bg{background:rgba(26,95,160,.08);color:var(--blue);border:1px solid rgba(26,95,160,.2)}
+.bb{background:rgba(160,96,16,.12);color:var(--amber);border:1px solid rgba(160,96,16,.25)}
+.dup{display:inline-flex;align-items:center;padding:1px 5px;border-radius:8px;background:rgba(192,54,42,.12);color:var(--red);font-size:10px;margin-left:4px;border:.5px solid rgba(192,54,42,.25)}
 .fi{padding:4px 7px;border:1px solid var(--bo);border-radius:5px;background:var(--bg3);color:var(--w);font-size:12px;font-family:inherit;min-width:0}
-.fi:focus{outline:none;border-color:rgba(201,168,76,.5)}
-.rdel{background:none;border:none;cursor:pointer;color:var(--mu);font-size:13px;padding:2px;line-height:1;flex-shrink:0}
-.rdel:hover{color:var(--red)}
-.addbtn{font-size:11px;padding:4px 10px;border:1px dashed var(--bo);border-radius:5px;background:transparent;cursor:pointer;color:var(--mu);margin-top:4px}
-.addbtn:hover{background:var(--mu3)}
-.sv{font-size:10px;color:var(--mu);margin-left:auto}
-.btn{padding:6px 14px;border:1px solid var(--bo);border-radius:7px;background:transparent;cursor:pointer;font-size:12px;color:var(--w);font-family:inherit;transition:all .15s}
+.fi:focus{outline:none;border-color:rgba(181,104,30,.5)}
+.btn{padding:6px 13px;border:1px solid var(--bo);border-radius:7px;background:transparent;cursor:pointer;font-size:12px;color:var(--w);font-family:inherit;transition:all .15s}
 .btn:hover{background:var(--mu3)}
-.btn-g{border-color:rgba(201,168,76,.5);color:var(--gold2);background:var(--goldb)}
-.btn-g:hover{background:rgba(201,168,76,.2)}
-.btn-gr{border-color:rgba(93,168,122,.4);color:var(--green);background:rgba(93,168,122,.1)}
-.btn-gr:hover{background:rgba(93,168,122,.2)}
-.btn-b{border-color:rgba(91,155,213,.4);color:var(--blue);background:rgba(91,155,213,.1)}
-.btn-b:hover{background:rgba(91,155,213,.2)}
-.btn-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:16px}
-.sc{background:var(--bg3);border:1px solid var(--bo);border-radius:9px;padding:12px}
-.sc .ban{font-size:13px;font-weight:700;color:var(--gold2);margin-bottom:6px}
-.sc .row{display:flex;justify-content:space-between;font-size:12px;padding:2px 0;border-bottom:1px solid var(--bo2)}
-.sc .row:last-child{border-bottom:none}
-.sc .k{color:var(--mu)}
-.notice{background:rgba(91,155,213,.1);border:1px solid rgba(91,155,213,.2);border-radius:7px;padding:8px 12px;font-size:12px;color:var(--blue);margin-bottom:12px}
-.err-box{background:rgba(217,124,106,.1);border:1px solid rgba(217,124,106,.2);border-radius:7px;padding:8px 12px;font-size:12px;color:var(--red);margin-bottom:12px}
-.empty{text-align:center;padding:24px;color:var(--mu);font-size:12px}
-.sec-title{font-size:13px;font-weight:500;color:var(--w2);margin:18px 0 10px}
-.saving{font-size:11px;color:var(--mu);margin-left:8px}
-.sync-ok{color:var(--green)}
+.btn-g{border-color:rgba(181,104,30,.45);color:var(--gold2);background:var(--goldb)}
+.btn-g:hover{background:rgba(181,104,30,.18)}
+.btn-gr{border-color:rgba(30,122,69,.4);color:var(--green);background:rgba(30,122,69,.08)}
+.btn-gr:hover{background:rgba(30,122,69,.16)}
+.btn-b{border-color:rgba(26,95,160,.4);color:var(--blue);background:rgba(26,95,160,.08)}
+.btn-b:hover{background:rgba(26,95,160,.16)}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.notice{background:rgba(26,95,160,.08);border:1px solid rgba(26,95,160,.2);border-radius:7px;padding:8px 12px;font-size:12px;color:var(--blue);margin-bottom:10px}
+.err-box{background:rgba(192,54,42,.08);border:1px solid rgba(192,54,42,.2);border-radius:7px;padding:8px 12px;font-size:12px;color:var(--red);margin-bottom:10px}
+.empty{text-align:center;padding:20px;color:var(--mu);font-size:12px}
+.sec-title{font-size:13px;font-weight:600;color:var(--w2);margin:16px 0 8px}
+.sconf-grid{display:grid;grid-template-columns:140px 1fr 1fr 1fr;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--bo2)}
+.sconf-grid:last-child{border-bottom:none}
+table.stat-t{width:100%;border-collapse:collapse;font-size:11px}
+table.stat-t th{padding:5px 8px;text-align:center;background:var(--bg3);border:1px solid var(--bo);font-weight:600;color:var(--w2);white-space:nowrap}
+table.stat-t th.lh{text-align:left}
+table.stat-t td{padding:4px 8px;text-align:center;border:1px solid var(--bo2);color:var(--w2)}
+table.stat-t td.lh{text-align:left;font-weight:600;background:var(--bg3);white-space:nowrap}
+table.stat-t td.zero{color:var(--mu);opacity:.45}
+table.stat-t td.tot{font-weight:700;background:rgba(181,104,30,.07);color:var(--gold2)}
+table.stat-t td.tot-lh{font-weight:700;background:rgba(181,104,30,.07);color:var(--gold2);text-align:left}
+.month-panel{background:var(--bg2);border:1px solid var(--bo);border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.month-panel .lbl{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.month-panel select,.month-panel input.ti{background:var(--bg3);border:1px solid var(--bo);border-radius:5px;color:var(--w);font-size:13px;padding:5px 8px;font-family:inherit}
+.month-cur{font-size:15px;font-weight:700;color:var(--gold2)}
 input[type=checkbox]{cursor:pointer;accent-color:var(--gold);width:13px;height:13px}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -135,158 +122,163 @@ input[type=checkbox]{cursor:pointer;accent-color:var(--gold);width:13px;height:1
 </style>
 </head>
 <body>
-
-<!-- Login -->
 <div id="login-screen">
   <div class="login-box">
     <h1>QUETTA</h1>
     <p>장학 관리 시스템</p>
-    <input type="password" id="li-pw" placeholder="비밀번호" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+    <input type="password" id="li-pw" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doLogin()">
     <button onclick="doLogin()">로그인</button>
     <div class="login-err" id="li-err"></div>
   </div>
 </div>
-
-<!-- App -->
 <div class="app" id="app-screen" style="display:none">
   <aside class="sb" id="sb"></aside>
   <main id="main"></main>
 </div>
-
-<!-- Hidden file inputs -->
-<input type="file" id="fi-cur"  accept=".xlsx,.xls" style="display:none">
+<input type="file" id="fi-cur" accept=".xlsx,.xls" style="display:none">
 <input type="file" id="fi-prev" accept=".xlsx,.xls" style="display:none">
-<input type="file" id="fi-ex"   accept=".xlsx,.xls" style="display:none">
-
+<input type="file" id="fi-ex" accept=".xlsx,.xls" style="display:none">
 <script>
-// ── Firebase Init ─────────────────────────────────
-firebase.initializeApp({
-  apiKey:"AIzaSyBQ3V-4EYiIKShPmfuNwhPMz-WiiTzi6CM",
-  authDomain:"grades-of-test.firebaseapp.com",
-  projectId:"grades-of-test",
-  storageBucket:"grades-of-test.firebasestorage.app",
-  messagingSenderId:"607351091085",
-  appId:"1:607351091085:web:19b3b42ee58bb0045f57c4"
-});
-const auth=firebase.auth();
-const db=firebase.firestore();
-
-// ── Login ─────────────────────────────────
+firebase.initializeApp({apiKey:"AIzaSyBQ3V-4EYiIKShPmfuNwhPMz-WiiTzi6CM",authDomain:"grades-of-test.firebaseapp.com",projectId:"grades-of-test",storageBucket:"grades-of-test.firebasestorage.app",messagingSenderId:"607351091085",appId:"1:607351091085:web:19b3b42ee58bb0045f57c4"});
+const auth=firebase.auth();const db=firebase.firestore();
 async function doLogin(){
-  const em='campusk@dshw.co.kr'; // 고정 계정
   const pw=document.getElementById('li-pw').value;
   document.getElementById('li-err').textContent='';
-  try{
-    await auth.signInWithEmailAndPassword(em,pw);
-  }catch(e){
-    const msgs={'auth/user-not-found':'존재하지 않는 계정입니다','auth/wrong-password':'비밀번호가 틀렸습니다','auth/invalid-email':'이메일 형식을 확인해 주세요','auth/too-many-requests':'잠시 후 다시 시도해 주세요'};
-    document.getElementById('li-err').textContent=msgs[e.code]||e.message;
-  }
+  try{await auth.signInWithEmailAndPassword('campusk@dshw.co.kr',pw);}
+  catch(e){const m={'auth/wrong-password':'비밀번호 오류','auth/too-many-requests':'잠시 후 다시 시도'};document.getElementById('li-err').textContent=m[e.code]||e.message;}
 }
 auth.onAuthStateChanged(async user=>{
-  if(user){
-    document.getElementById('login-screen').style.display='none';
-    document.getElementById('app-screen').style.display='flex';
-    S.userEmail=user.email;
-    await loadFromFirestore();
-    render();
-  } else {
-    document.getElementById('login-screen').style.display='flex';
-    document.getElementById('app-screen').style.display='none';
-  }
+  if(user){document.getElementById('login-screen').style.display='none';document.getElementById('app-screen').style.display='flex';S.userEmail=user.email;await loadAll();render();}
+  else{document.getElementById('login-screen').style.display='flex';document.getElementById('app-screen').style.display='none';}
 });
 function doLogout(){auth.signOut();}
-
-// ── Constants ─────────────────────────────────
 const ENG_D={1:0,2:.5,3:2,4:4,5:6,6:8,7:10,8:12,9:14};
 const COL={반:2,번호:3,이름:4,계열:5,국어표준:12,국어백분:13,수학표준:26,수학백분:27,영어등급:36,탐1표준:55,탐1백분:56,탐2표준:66,탐2백분:67};
-const MDEFS=[
-  {id:'dasung_in', lbl:'대성학원 전체 1등 (인문)',bc:'bq',혜택:'수강료 100%',multi:false,cols:['반','학번','이름','환산점수','비고']},
-  {id:'dasung_nat',lbl:'대성학원 전체 1등 (자연)',bc:'bq',혜택:'수강료 100%',multi:false,cols:['반','학번','이름','환산점수','비고']},
-  {id:'quetta_in', lbl:'QUETTA 장학 (인문)',       bc:'bq',혜택:'수강료 100%',multi:false,cols:['반','학번','이름','환산점수','비고']},
-  {id:'quetta_nat',lbl:'QUETTA 장학 (자연)',       bc:'bq',혜택:'수강료 100%',multi:false,cols:['반','학번','이름','환산점수','비고']},
-  {id:'billboard_in', lbl:'서울 빌보드 (인문)',    bc:'bb',혜택:'매점상품권 5만원권',multi:true,cols:['반','학번','이름','환산점수','비고']},
-  {id:'billboard_nat',lbl:'서울 빌보드 (자연)',    bc:'bb',혜택:'매점상품권 5만원권',multi:true,cols:['반','학번','이름','환산점수','비고']},
-  {id:'honor_in',  lbl:'성적우수자 (인문)',         bc:'bb',혜택:'매점상품권 5만원권',multi:true,cols:['반','학번','이름','환산점수','비고']},
-  {id:'honor_nat', lbl:'성적우수자 (자연)',         bc:'bb',혜택:'매점상품권 5만원권',multi:true,cols:['반','학번','이름','환산점수','비고']},
-  {id:'improve_gift',lbl:'성적 향상',              bc:'bg',혜택:'매점상품권 5만원권',multi:true,cols:['반','학번','이름','비고']},
-];
-
-// ── State ─────────────────────────────────
+const BAN_CODE={'71':'A','72':'X','73':'I','74':'O','75':'M','76':'K','77':'N','78':'D','79':'S'};
+const BAN_LIST=['71','72','73','74','75','76','77','78','79'];
+let SCONF={
+  auto:{
+    d1:{lbl:'다이닝 장학',혜택:'식비 100%',bc:'bd',기준:'QUETTA 전체 환산표점 1위'},
+    d2:{lbl:'다이닝 하프 장학',혜택:'식비 50%',bc:'bd',기준:'QUETTA 전체 환산표점 2위'},
+    qt:{lbl:'퀀텀 장학',혜택:'독서실비 100%',bc:'bm',기준:'QUETTA 전체 환산표점 3위'},
+    math:{lbl:'수학반 1등',혜택:'독서실비 100%',bc:'bm',기준:'각 반별 환산표점 1위'},
+    mi:{lbl:'수학백분위 최고 향상',혜택:'독서실비 100%',bc:'bm',기준:'수학 백분위 최대 향상자'},
+    ti:{lbl:'백분위총합 최고 향상',혜택:'독서실비 100%',bc:'bm',기준:'N+AB+BE+BP 최대 향상자'},
+  },
+  manual:{
+    dasung_in:{lbl:'대성학원 전체 1등 (인문)',혜택:'교습비 100%',bc:'bq',multi:false,cols:['반','학번','이름','환산점수','비고']},
+    dasung_nat:{lbl:'대성학원 전체 1등 (자연)',혜택:'교습비 100%',bc:'bq',multi:false,cols:['반','학번','이름','환산점수','비고']},
+    quetta_in:{lbl:'QUETTA 장학 (인문)',혜택:'교습비 100%',bc:'bq',multi:false,cols:['반','학번','이름','환산점수','비고']},
+    quetta_nat:{lbl:'QUETTA 장학 (자연)',혜택:'교습비 100%',bc:'bq',multi:false,cols:['반','학번','이름','환산점수','비고']},
+    billboard_in:{lbl:'서울 빌보드 (인문)',혜택:'매점상품권 5만원권',bc:'bb',multi:true,cols:['반','학번','이름','환산점수','비고']},
+    billboard_nat:{lbl:'서울 빌보드 (자연)',혜택:'매점상품권 5만원권',bc:'bb',multi:true,cols:['반','학번','이름','환산점수','비고']},
+    honor_in:{lbl:'성적우수자 (인문)',혜택:'매점상품권 5만원권',bc:'bb',multi:true,cols:['반','학번','이름','환산점수','비고']},
+    honor_nat:{lbl:'성적우수자 (자연)',혜택:'매점상품권 5만원권',bc:'bb',multi:true,cols:['반','학번','이름','환산점수','비고']},
+    improve_gift:{lbl:'성적 향상',혜택:'매점상품권 5만원권',bc:'bg',multi:true,cols:['반','학번','이름','비고']},
+  }
+};
+const ACTIVE_MANUAL=['dasung_in','dasung_nat','honor_in','honor_nat'];
 const _now=new Date();
 let S={
   tab:'results',
   curYear:String(_now.getFullYear()),
   curMonth:String(_now.getMonth()+1),
+  시험종류:'더프',
   monthConfirmed:false,
   curStudents:null,prevStudents:null,
   curFile:null,prevFile:null,exFile:null,
   exMap:{},results:null,manual:{},
-  excluded:new Set(),accumulated:{},
+  excluded:new Set(),remarks:{},
+  accumulated:{},allStudentsData:{},
+  finalViewMonth:null,allViewMonth:null,
   dbg:'',err:null,syncMsg:'',userEmail:'',
-  finalViewMonth:null, // null=이번달, 'YYYY-MM'=과거월 조회
 };
-let _ws=[];
-MDEFS.forEach(d=>{S.manual[d.id]=[erow(d)];});
-function erow(d){const r={};d.cols.forEach(c=>r[c]='');return r;}
+let _ws=[];let _mSel=new Set();let _mSort='desc';
+function initManual(){Object.keys(SCONF.manual).forEach(id=>{if(!S.manual[id]||!S.manual[id].length)S.manual[id]=[erow(id)];});}
+function erow(id){const r={};(SCONF.manual[id]?.cols||[]).forEach(c=>r[c]='');return r;}
 function mkey(){return`${S.curYear}-${S.curMonth.padStart(2,'0')}`;}
-function fmtKey(k){
-  // "2026-04" → "2026년 4월"
-  const m=k.match(/^(\d{4})-(\d{2})$/);
-  return m?`${m[1]}년 ${parseInt(m[2])}월`:k;
-}
-
-// ── Firestore ─────────────────────────────────
-async function loadFromFirestore(){
+function mlbl(mk){const m=mk.match(/^(\d{4})-(\d{2})$/);if(!m)return mk;return`${m[1]}년 ${parseInt(m[2])}월`;}
+function fullLbl(mk){const d=S.accumulated[mk];const base=d?.label||mlbl(mk);const jt=d?.시험종류||'';return jt?`${base} (${jt})`:base;}
+async function loadAll(){
   try{
+    const cfgDoc=await db.collection('quetta_settings').doc('sconf').get();
+    if(cfgDoc.exists){
+      const sv=cfgDoc.data();
+      if(sv.auto)Object.keys(sv.auto).forEach(k=>{if(SCONF.auto[k])Object.assign(SCONF.auto[k],sv.auto[k]);});
+      if(sv.manual)Object.keys(sv.manual).forEach(k=>{if(SCONF.manual[k])Object.assign(SCONF.manual[k],sv.manual[k]);});
+    }
     const snap=await db.collection('quetta_data').get();
-    S.accumulated={};
-    snap.forEach(doc=>{S.accumulated[doc.id]=doc.data();});
-    // 이번달 manual/excluded 불러오기
+    S.accumulated={};S.allStudentsData={};
+    snap.forEach(doc=>{const d=doc.data();S.accumulated[doc.id]=d;if(d.allStudents)S.allStudentsData[doc.id]=d.allStudents;});
     const mk=mkey();
     if(S.accumulated[mk]){
-      if(S.accumulated[mk].manual)MDEFS.forEach(d=>{if(S.accumulated[mk].manual[d.id])S.manual[d.id]=S.accumulated[mk].manual[d.id];});
-      if(S.accumulated[mk].excluded)S.excluded=new Set(S.accumulated[mk].excluded);
+      const d=S.accumulated[mk];
+      if(d.manual)Object.keys(SCONF.manual).forEach(id=>{if(d.manual[id])S.manual[id]=d.manual[id];});
+      if(d.excluded)S.excluded=new Set(d.excluded);
+      if(d.remarks)S.remarks=d.remarks;
+      if(d.시험종류)S.시험종류=d.시험종류;
     }
-    setSyncMsg('✓ 불러오기 완료');
-  }catch(e){setSyncMsg('⚠ 불러오기 실패: '+e.message);}
+    initManual();setSyncMsg('✓ 로드 완료');
+  }catch(e){setSyncMsg('⚠ 로드 실패: '+e.message);}
 }
-
-async function saveToFirestore(){
+async function saveAutoResults(){
   const mk=mkey();
-  const ws=getAllWinners();
-  const data={
-    label:`${S.curYear}년 ${S.curMonth}월`,
-    winners:ws.map(w=>({...w,excluded:S.excluded.has(wkey(w)),기존장학:S.exMap[String(w.번호)]||w.기존장학||''})),
-    classStats:calcClassStats(),
-    overallAvg:overallAvg(),
-    manual:S.manual,
-    excluded:[...S.excluded],
-    savedAt:new Date().toISOString(),
-  };
+  if(!S.curStudents){alert('성적 파일을 먼저 업로드하세요.');return;}
+  setSyncMsg('저장 중...');
   try{
-    setSyncMsg('저장 중...');
+    const data={label:`${S.curYear}년 ${S.curMonth}월`,시험종류:S.시험종류,classStats:calcClassStats(),overallAvg:overallAvg(),allStudents:S.curStudents,savedAt:new Date().toISOString()};
+    await db.collection('quetta_data').doc(mk).set(data,{merge:true});
+    S.accumulated[mk]={...S.accumulated[mk],...data};S.allStudentsData[mk]=S.curStudents;
+    setSyncMsg('✓ 자동산출 저장 완료');render();
+  }catch(e){setSyncMsg('⚠ 저장 실패: '+e.message);}
+}
+async function saveToFirestore(){
+  const mk=mkey();const ws=getAllWinners();setSyncMsg('저장 중...');
+  try{
+    const data={
+      label:`${S.curYear}년 ${S.curMonth}월`,시험종류:S.시험종류,
+      winners:ws.map(w=>({...w,excluded:S.excluded.has(wkey(w)),기존장학:S.exMap[String(w.번호)]||w.기존장학||'',비고:S.remarks[wkey(w)]||''})),
+      classStats:calcClassStats(),overallAvg:overallAvg(),
+      manual:S.manual,excluded:[...S.excluded],remarks:S.remarks,
+      allStudents:S.curStudents||S.allStudentsData[mk]||null,
+      savedAt:new Date().toISOString(),
+    };
     await db.collection('quetta_data').doc(mk).set(data);
-    S.accumulated[mk]=data;
+    S.accumulated[mk]=data;if(data.allStudents)S.allStudentsData[mk]=data.allStudents;
     setSyncMsg('✓ 저장 완료 ('+new Date().toLocaleTimeString('ko-KR')+')');
   }catch(e){setSyncMsg('⚠ 저장 실패: '+e.message);}
 }
-
 async function autoSaveManual(){
-  // manual 변경 시 Firestore 자동 저장
   clearTimeout(window._ast);
   window._ast=setTimeout(async()=>{
     const mk=mkey();
-    try{
-      await db.collection('quetta_data').doc(mk).set({manual:S.manual,excluded:[...S.excluded]},{merge:true});
-      setSyncMsg('✓ 자동저장 완료');
-    }catch(e){}
-  },1000);
+    try{await db.collection('quetta_data').doc(mk).set({manual:S.manual,excluded:[...S.excluded],remarks:S.remarks},{merge:true});setSyncMsg('✓ 자동저장');}catch(e){}
+  },800);
 }
-
+async function saveSettings(){
+  setSyncMsg('설정 저장 중...');
+  try{
+    const sv={auto:{},manual:{}};
+    Object.keys(SCONF.auto).forEach(k=>{sv.auto[k]={lbl:SCONF.auto[k].lbl,혜택:SCONF.auto[k].혜택,기준:SCONF.auto[k].기준};});
+    Object.keys(SCONF.manual).forEach(k=>{sv.manual[k]={lbl:SCONF.manual[k].lbl,혜택:SCONF.manual[k].혜택};});
+    await db.collection('quetta_settings').doc('sconf').set(sv);
+    setSyncMsg('✓ 설정 저장 완료');
+  }catch(e){setSyncMsg('⚠ 설정 저장 실패');}
+}
+async function loadMonthData(){
+  const mk=mkey();
+  Object.keys(SCONF.manual).forEach(id=>{S.manual[id]=[erow(id)];});
+  S.excluded=new Set();S.remarks={};S.monthConfirmed=false;S.finalViewMonth=null;
+  if(S.accumulated[mk]){
+    const d=S.accumulated[mk];
+    if(d.manual)Object.keys(SCONF.manual).forEach(id=>{if(d.manual[id])S.manual[id]=d.manual[id];});
+    if(d.excluded)S.excluded=new Set(d.excluded);
+    if(d.remarks)S.remarks=d.remarks;
+    if(d.시험종류)S.시험종류=d.시험종류;
+  }
+  render();
+}
 function setSyncMsg(m){S.syncMsg=m;const el=document.getElementById('sync-msg');if(el)el.textContent=m;}
-
-// ── Excel Parsing ─────────────────────────────────
 function parseScores(buf){
   const wb=XLSX.read(buf,{type:'array'});
   const wsn=wb.SheetNames.find(n=>n==='성적')||wb.SheetNames[0];
@@ -294,51 +286,38 @@ function parseScores(buf){
   const toN=v=>{const x=parseFloat(String(v||'').replace(/,/g,''));return isNaN(x)?0:x;};
   let ds=0;
   for(let i=0;i<Math.min(15,raw.length);i++){
-    const nm=String(raw[i][COL.이름]||'').trim();
-    const bn=parseFloat(String(raw[i][COL.번호]||'').replace(/,/g,''));
+    const nm=String(raw[i][COL.이름]||'').trim();const bn=parseFloat(String(raw[i][COL.번호]||'').replace(/,/g,''));
     if(nm&&nm!=='이름'&&!isNaN(bn)&&bn>0){ds=i;break;}
   }
   const arr=[];
   for(let i=ds;i<raw.length;i++){
-    const r=raw[i];
-    const 이름=String(r[COL.이름]||'').trim();if(!이름)continue;
+    const r=raw[i];const 이름=String(r[COL.이름]||'').trim();if(!이름)continue;
     const 번호=toN(r[COL.번호]);if(!번호)continue;
-    const eng=Math.round(toN(r[COL.영어등급]))||9;
-    const d2=ENG_D[eng]??14;
+    const eng=Math.round(toN(r[COL.영어등급]))||9;const d2=ENG_D[eng]??14;
     const 국어표준=toN(r[COL.국어표준]),수학표준=toN(r[COL.수학표준]);
     const 탐1표준=toN(r[COL.탐1표준]),탐2표준=toN(r[COL.탐2표준]);
     arr.push({
       반:Number(r[COL.반])||0,번호,이름,계열:String(r[COL.계열]||'').trim(),
-      국어표준,국어백분:toN(r[COL.국어백분]),
-      수학표준,수학백분:toN(r[COL.수학백분]),
-      영어등급:eng,탐1표준,탐1백분:toN(r[COL.탐1백분]),
-      탐2표준,탐2백분:toN(r[COL.탐2백분]),
+      국어표준,국어백분:toN(r[COL.국어백분]),수학표준,수학백분:toN(r[COL.수학백분]),
+      영어등급:eng,탐1표준,탐1백분:toN(r[COL.탐1백분]),탐2표준,탐2백분:toN(r[COL.탐2백분]),
       환산:국어표준+수학표준+탐1표준+탐2표준-d2,
       백분위합:toN(r[COL.국어백분])+toN(r[COL.수학백분])+toN(r[COL.탐1백분])+toN(r[COL.탐2백분]),
     });
   }
-  S.dbg=`시트:"${wsn}" ${raw.length}행 → ${arr.length}명 파싱 완료`;
+  S.dbg=`시트:"${wsn}" ${raw.length}행 → ${arr.length}명`;
   return arr;
 }
 function parseExisting(buf){
   const wb=XLSX.read(buf,{type:'array'});
   const raw=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,defval:''});
   const map={};
-  for(let i=1;i<raw.length;i++){
-    const hb=String(raw[i][9]||'').trim();   // J열: 학번
-    const jl=String(raw[i][3]||'').trim();   // D열: 장학명
-    if(hb&&jl)map[hb]=map[hb]?map[hb]+', '+jl:jl;
-  }
+  for(let i=1;i<raw.length;i++){const hb=String(raw[i][9]||'').trim();const jl=String(raw[i][3]||'').trim();if(hb&&jl)map[hb]=map[hb]?map[hb]+', '+jl:jl;}
   return map;
 }
-
-// ── Calculations ─────────────────────────────────
 function calcResults(){
-  const cur=S.curStudents,prev=S.prevStudents;
-  const res={};
+  const cur=S.curStudents,prev=S.prevStudents;const res={};
   const bh=[...cur].sort((a,b)=>b.환산-a.환산||b.수학표준-a.수학표준||b.국어표준-a.국어표준);
-  res.d1=bh[0]||null;res.d2=bh[1]||null;res.qt=bh[2]||null;
-  res.math={};
+  res.d1=bh[0]||null;res.d2=bh[1]||null;res.qt=bh[2]||null;res.math={};
   [...new Set(cur.map(s=>s.반))].filter(b=>b>0).sort((a,b)=>a-b).forEach(ban=>{
     const g=cur.filter(s=>s.반===ban).sort((a,b)=>b.환산-a.환산||b.수학표준-a.수학표준||b.국어표준-a.국어표준);
     if(g.length)res.math[ban]=g[0];
@@ -347,15 +326,9 @@ function calcResults(){
   if(prev?.length){
     const pm={};prev.forEach(s=>pm[s.번호]=s);
     const bm=cur.filter(s=>pm[s.번호]!==undefined);
-    const mi=bm.filter(s=>pm[s.번호].수학백분>0)
-      .map(s=>({...s,향상:s.수학백분-pm[s.번호].수학백분,이전수학:pm[s.번호].수학백분}))
-      .filter(s=>s.향상>0)
-      .sort((a,b)=>b.향상-a.향상||b.수학표준-a.수학표준||b.국어표준-a.국어표준);
+    const mi=bm.filter(s=>pm[s.번호].수학백분>0).map(s=>({...s,향상:s.수학백분-pm[s.번호].수학백분,이전수학:pm[s.번호].수학백분})).filter(s=>s.향상>0).sort((a,b)=>b.향상-a.향상||b.수학표준-a.수학표준||b.국어표준-a.국어표준);
     if(mi.length)res.mi=mi[0];
-    const ti=bm.filter(s=>{const p=pm[s.번호];return p.국어백분>0&&p.수학백분>0&&p.탐1백분>0&&p.탐2백분>0;})
-      .map(s=>({...s,향상:s.백분위합-pm[s.번호].백분위합,이전합:pm[s.번호].백분위합}))
-      .filter(s=>s.향상>0)
-      .sort((a,b)=>b.향상-a.향상||b.수학표준-a.수학표준||b.국어표준-a.국어표준);
+    const ti=bm.filter(s=>{const p=pm[s.번호];return p.국어백분>0&&p.수학백분>0&&p.탐1백분>0&&p.탐2백분>0;}).map(s=>({...s,향상:s.백분위합-pm[s.번호].백분위합,이전합:pm[s.번호].백분위합})).filter(s=>s.향상>0).sort((a,b)=>b.향상-a.향상||b.수학표준-a.수학표준||b.국어표준-a.국어표준);
     if(ti.length)res.ti=ti[0];
     S.dbg+=`\n향상: 양달응시${bm.length}명 / 수학후보${mi.length} / 총합후보${ti.length}`;
     if(res.mi)S.dbg+=`\n수학향상1위: ${res.mi.이름}(${res.mi.반}반) ${res.mi.이전수학}→${res.mi.수학백분}(+${res.mi.향상})`;
@@ -366,98 +339,94 @@ function calcResults(){
 function calcClassStats(){
   if(!S.curStudents?.length)return[];
   return[...new Set(S.curStudents.map(s=>s.반))].filter(b=>b>0).sort((a,b)=>a-b).map(ban=>{
-    const g=S.curStudents.filter(s=>s.반===ban);
-    const avg=f=>g.reduce((s,v)=>s+v[f],0)/g.length;
+    const g=S.curStudents.filter(s=>s.반===ban);const avg=f=>g.reduce((s,v)=>s+v[f],0)/g.length;
     return{반:ban,인원:g.length,환산:avg('환산'),국어:avg('국어표준'),수학:avg('수학표준'),탐1:avg('탐1표준'),탐2:avg('탐2표준')};
   });
 }
-function overallAvg(){
-  if(!S.curStudents?.length)return 0;
-  return S.curStudents.reduce((s,v)=>s+v.환산,0)/S.curStudents.length;
-}
-
-// ── Winners ─────────────────────────────────
+function overallAvg(){if(!S.curStudents?.length)return 0;return S.curStudents.reduce((s,v)=>s+v.환산,0)/S.curStudents.length;}
 function getAllWinners(){
-  const ws=[];
-  const r=S.results;
-  const addA=(lbl,bc,혜택,s,val)=>{
-    if(!s)return;
-    ws.push({lbl,bc,혜택,반:s.반,번호:s.번호,이름:s.이름,계열:s.계열,val,type:'auto',기존장학:S.exMap[String(s.번호)]||'',dup:[]});
-  };
+  const ws=[];const r=S.results;const ac=SCONF.auto;
+  const addA=(key,s,val)=>{const c=ac[key];if(!s||!c)return;ws.push({lbl:c.lbl,bc:c.bc,혜택:c.혜택,반:s.반,번호:s.번호,이름:s.이름,계열:s.계열,val,type:'auto',기존장학:S.exMap[String(s.번호)]||'',dup:[]});};
   if(r){
-    addA('다이닝 장학','bd','식비 100%',r.d1,r.d1?.환산.toFixed(1));
-    addA('다이닝 하프 장학','bd','식비 50%',r.d2,r.d2?.환산.toFixed(1));
-    addA('퀀텀 장학','bm','독서실비 100%',r.qt,r.qt?.환산.toFixed(1));
-    Object.entries(r.math||{}).forEach(([ban,s])=>addA(`수학반 1등 (${ban}반)`,'bm','독서실비 100%',s,s.환산.toFixed(1)));
-    if(r.mi)addA('수학백분위 최고 향상','bg','매점상품권',r.mi,`+${r.mi.향상}`);
-    if(r.ti)addA('백분위총합 최고 향상','bg','매점상품권',r.ti,`+${r.ti.향상}`);
+    addA('d1',r.d1,r.d1?.환산.toFixed(1));addA('d2',r.d2,r.d2?.환산.toFixed(1));addA('qt',r.qt,r.qt?.환산.toFixed(1));
+    Object.entries(r.math||{}).forEach(([ban,s])=>{const c=ac.math;ws.push({lbl:`${c.lbl} (${ban}반)`,bc:c.bc,혜택:c.혜택,반:s.반,번호:s.번호,이름:s.이름,계열:s.계열,val:s.환산.toFixed(1),type:'auto',기존장학:S.exMap[String(s.번호)]||'',dup:[]});});
+    if(r.mi){const c=ac.mi;ws.push({lbl:c.lbl,bc:c.bc,혜택:c.혜택,반:r.mi.반,번호:r.mi.번호,이름:r.mi.이름,계열:r.mi.계열,val:`+${r.mi.향상}`,type:'auto',기존장학:S.exMap[String(r.mi.번호)]||'',dup:[]});}
+    if(r.ti){const c=ac.ti;ws.push({lbl:c.lbl,bc:c.bc,혜택:c.혜택,반:r.ti.반,번호:r.ti.번호,이름:r.ti.이름,계열:r.ti.계열,val:`+${r.ti.향상}`,type:'auto',기존장학:S.exMap[String(r.ti.번호)]||'',dup:[]});}
   } else {
-    // 엑셀 미업로드: Firestore에 저장된 자동산출 결과 복원
     const saved=(S.accumulated[mkey()]?.winners||[]).filter(w=>w.type==='auto');
     saved.forEach(w=>ws.push({...w,dup:[]}));
   }
-  MDEFS.forEach(d=>{
-    (S.manual[d.id]||[]).filter(row=>row.이름).forEach(row=>{
-      ws.push({lbl:d.lbl,bc:d.bc,혜택:d.혜택,반:row.반||'',번호:row.학번||'',이름:row.이름,계열:row.계열||'',val:row.환산점수||row.비고||'',type:'manual',기존장학:S.exMap[String(row.학번)]||'',dup:[]});
-    });
+  ACTIVE_MANUAL.forEach(id=>{
+    const mc=SCONF.manual[id];
+    (S.manual[id]||[]).filter(row=>row.이름).forEach(row=>{ws.push({lbl:mc.lbl,bc:mc.bc,혜택:mc.혜택,반:row.반||'',번호:row.학번||'',이름:row.이름,계열:row.계열||'',val:row.환산점수||row.비고||'',type:'manual',기존장학:S.exMap[String(row.학번)]||'',dup:[]});});
   });
   const nc={};ws.forEach(w=>nc[w.이름]=(nc[w.이름]||0)+1);
   ws.forEach(w=>{if(nc[w.이름]>1)w.dup=ws.filter(x=>x.이름===w.이름&&x.lbl!==w.lbl).map(x=>x.lbl);});
   return ws;
 }
 function wkey(w){return`${w.이름}::${w.lbl}`;}
-
-// ── Manual ─────────────────────────────────
-function upd(id,ri,fld,val){S.manual[id][ri][fld]=val;autoSaveManual();}
-function addRow(id){S.manual[id].push(erow(MDEFS.find(x=>x.id===id)));render();}
-function delRow(id,ri){
-  if(S.manual[id].length<=1){S.manual[id]=[erow(MDEFS.find(x=>x.id===id))];render();return;}
-  S.manual[id].splice(ri,1);autoSaveManual();render();
-}
-function toggleExcl(idx){
-  const k=wkey(_ws[idx]);
-  if(S.excluded.has(k))S.excluded.delete(k);else S.excluded.add(k);
-  autoSaveManual();render();
-}
-
-// ── Excel Export ─────────────────────────────────
 function exportExcel(){
-  const wb=XLSX.utils.book_new();
-  const ws=getAllWinners();
-  const h1=['장학명','혜택','반','번호/학번','이름','계열','환산/향상','기존장학','중복여부','제외여부'];
+  const wb=XLSX.utils.book_new();const ws=getAllWinners();
+  const h1=['장학명','혜택','반','번호/학번','이름','계열','환산/향상','기존장학','중복여부','제외여부','비고'];
   const rows=[h1];
-  ws.forEach(w=>{
-    const ex=S.excluded.has(wkey(w));
-    rows.push([w.lbl,w.혜택,w.반,w.번호,w.이름,w.계열,w.val,S.exMap[String(w.번호)]||w.기존장학||'',w.dup?.length?'중복:'+w.dup.join(', '):'',ex?'제외(중복)':'']);
-  });
-  const s1=XLSX.utils.aoa_to_sheet(rows);
-  s1['!cols']=[{wch:22},{wch:14},{wch:5},{wch:8},{wch:10},{wch:5},{wch:10},{wch:18},{wch:22},{wch:10}];
+  ws.forEach(w=>{const ex=S.excluded.has(wkey(w));rows.push([w.lbl,w.혜택,w.반,w.번호,w.이름,w.계열,w.val,S.exMap[String(w.번호)]||w.기존장학||'',w.dup?.length?'중복:'+w.dup.join(', '):'',ex?'제외':'',S.remarks[wkey(w)]||'']);});
+  const s1=XLSX.utils.aoa_to_sheet(rows);s1['!cols']=[{wch:22},{wch:14},{wch:5},{wch:8},{wch:10},{wch:5},{wch:10},{wch:18},{wch:20},{wch:6},{wch:20}];
   XLSX.utils.book_append_sheet(wb,s1,'장학생명단');
   const stats=calcClassStats();
   if(stats.length){
-    const h2=['반','인원','환산표점 평균','국어 표준 평균','수학 표준 평균','탐구 합산 평균'];
-    const rows2=[h2];
+    const h2=['반','인원','환산평균','국어평균','수학평균','탐구합산평균'];const rows2=[h2];
     stats.forEach(s=>rows2.push([s.반+'반',s.인원,+s.환산.toFixed(1),+s.국어.toFixed(1),+s.수학.toFixed(1),+(s.탐1+s.탐2).toFixed(1)]));
     rows2.push(['전체',S.curStudents?.length||0,+overallAvg().toFixed(1),'','','']);
-    const s2=XLSX.utils.aoa_to_sheet(rows2);
-    XLSX.utils.book_append_sheet(wb,s2,'반별평균');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows2),'반별평균');
   }
   XLSX.writeFile(wb,`QUETTA_장학_${S.curYear}_${S.curMonth.padStart(2,'0')}.xlsx`);
 }
-
-// ── Render ─────────────────────────────────
+function updMAddBtn(){
+  const btn=document.getElementById('m-add-btn');const lbl=document.getElementById('m-sel-lbl');if(!btn||!lbl)return;
+  const schId=document.getElementById('m-sch')?.value;const cnt=_mSel.size;
+  if(cnt>0&&schId){btn.disabled=false;lbl.textContent=cnt+'명 선택됨';lbl.style.color='var(--gold2)';}
+  else if(cnt>0){btn.disabled=true;lbl.textContent=cnt+'명 선택 · 장학 종류 선택 필요';lbl.style.color='var(--mu)';}
+  else{btn.disabled=true;lbl.textContent='학생을 선택하세요';lbl.style.color='var(--mu)';}
+}
+function toggleMStudent(i){if(_mSel.has(i))_mSel.delete(i);else _mSel.add(i);renderStudentList();}
+function toggleMSort(){_mSort=(_mSort==='desc')?'asc':'desc';renderStudentList();}
+function renderStudentList(){
+  const tbody=document.getElementById('m-tbody');if(!tbody)return;
+  const q=(document.getElementById('m-search')?.value||'').trim().toLowerCase();
+  const fky=(document.getElementById('m-filter-kye')?.value||'');
+  const students=S.curStudents||[];
+  let vis=students.map((s,i)=>({s,i})).filter(({s})=>(!q||s.이름.toLowerCase().includes(q)||String(s.반).includes(q)||String(s.번호).includes(q))&&(!fky||s.계열===fky));
+  if(_mSort==='desc')vis.sort((a,b)=>b.s.환산-a.s.환산);else vis.sort((a,b)=>a.s.환산-b.s.환산);
+  const thEl=document.getElementById('m-th-hwan');
+  if(thEl)thEl.innerHTML='환산표점<span style="color:var(--amber)"> '+(_mSort==='desc'?'▼':'▲')+'</span>';
+  let html='';
+  vis.forEach(({s,i})=>{const sel=_mSel.has(i);html+=`<tr style="cursor:pointer${sel?';background:rgba(181,104,30,.07)':''}" onclick="toggleMStudent(${i})"><td style="width:24px;text-align:center;color:var(--amber);font-size:13px">${sel?'✓':''}</td><td>${s.반}반</td><td class="nn">${s.번호}</td><td class="nm">${s.이름}</td><td>${s.계열||'–'}</td><td class="nn">${s.환산.toFixed(1)}</td></tr>`;});
+  if(!html)html='<tr><td colspan="6" class="empty" style="padding:12px">검색 결과 없음</td></tr>';
+  tbody.innerHTML=html;updMAddBtn();
+}
+function addManualStudent(){
+  const schId=document.getElementById('m-sch')?.value;if(!schId||!_mSel.size)return;
+  if(!S.manual[schId])S.manual[schId]=[];
+  const already=new Set((S.manual[schId]||[]).map(r=>String(r.학번)));
+  _mSel.forEach(i=>{const s=S.curStudents[i];if(already.has(String(s.번호)))return;S.manual[schId].push({반:s.반,학번:s.번호,이름:s.이름,계열:s.계열,환산점수:s.환산.toFixed(1),비고:''});});
+  _mSel=new Set();autoSaveManual();render();
+}
+function delManualStudent(schId,ri){S.manual[schId].splice(ri,1);autoSaveManual();render();}
+function updManualNote(schId,ri,val){if(S.manual[schId]?.[ri])S.manual[schId][ri].비고=val;autoSaveManual();}
+function toggleExcl(idx){const k=wkey(_ws[idx]);if(S.excluded.has(k))S.excluded.delete(k);else S.excluded.add(k);autoSaveManual();render();}
+function updRemark(idx,val){const k=wkey(_ws[idx]);S.remarks[k]=val;autoSaveManual();}
 function render(){
-  renderSB();
-  const m=document.getElementById('main');if(!m)return;
+  renderSB();const m=document.getElementById('main');if(!m)return;
   switch(S.tab){
     case 'results':m.innerHTML=pgResults();break;
-    case 'manual': m.innerHTML=pgManual();renderStudentList();break;
-    case 'final':  m.innerHTML=pgFinal();break;
-    case 'stats':  m.innerHTML=pgStats();break;
+    case 'manual':m.innerHTML=pgManual();renderStudentList();break;
+    case 'final':m.innerHTML=pgFinal();break;
+    case 'allstudents':m.innerHTML=pgAll();break;
+    case 'stats':m.innerHTML=pgStats();break;
+    case 'settings':m.innerHTML=pgSettings();break;
   }
   bindSlots();
 }
-
 function renderSB(){
   const sb=document.getElementById('sb');if(!sb)return;
   const ni=(tab,icon,lbl)=>`<div class="ni${S.tab===tab?' on':''}" onclick="S.tab='${tab}';render()"><i>${icon}</i><span>${lbl}</span></div>`;
@@ -467,504 +436,330 @@ function renderSB(){
       ${ni('results','◈','자동 산출')}
       ${ni('manual','✎','수기 입력')}
       ${ni('final','☰','최종 명단')}
-      <div class="nsec">분석</div>
+      <div class="nsec">조회 & 분석</div>
+      ${ni('allstudents','≡','전체 명단')}
       ${ni('stats','▦','통계 & 누적')}
+      <div class="nsec">관리</div>
+      ${ni('settings','⚙','설정')}
     </nav>
-    <div id="sync-msg" class="saving">${S.syncMsg}</div>
-    <div class="mbar">
-      <label>대상 월</label>
-      <div class="mbar-row">
-        <input type="text" value="${S.curYear}" style="width:46px" onchange="S.curYear=this.value;render()">년
-        <input type="text" value="${S.curMonth}" style="width:32px" onchange="S.curMonth=this.value;loadMonthData()">월
-      </div>
-      <div class="my">${S.curYear}년 ${S.curMonth}월</div>
-    </div>
-    <div class="user-info">${S.userEmail}</div>
-    <button class="logout-btn" onclick="doLogout()">로그아웃</button>`;
+    <div class="sb-bottom">
+      <div class="user-info">${S.userEmail}</div>
+      <div id="sync-msg" class="sync-msg">${S.syncMsg}</div>
+      <button class="logout-btn" onclick="doLogout()">로그아웃</button>
+    </div>`;
 }
-
-async function loadMonthData(){
-  const mk=mkey();
-  MDEFS.forEach(d=>{S.manual[d.id]=[erow(d)];});
-  S.excluded=new Set();S.monthConfirmed=false;S.finalViewMonth=null;
-  if(S.accumulated[mk]){
-    if(S.accumulated[mk].manual)MDEFS.forEach(d=>{if(S.accumulated[mk].manual[d.id])S.manual[d.id]=S.accumulated[mk].manual[d.id];});
-    if(S.accumulated[mk].excluded)S.excluded=new Set(S.accumulated[mk].excluded);
-  }
-  render();
+function monthPanel(){
+  const yrs=['2025','2026','2027','2028'];
+  const mk=mkey();const saved=S.accumulated[mk];
+  return`<div class="month-panel">
+    <div><div class="lbl">대상 월</div><div style="display:flex;gap:6px;align-items:center;margin-top:4px">
+      <select class="ti fi" onchange="S.curYear=this.value;loadMonthData()">${yrs.map(y=>`<option${y===S.curYear?' selected':''}>${y}</option>`).join('')}</select>년
+      <select class="ti fi" onchange="S.curMonth=this.value;loadMonthData()">${Array.from({length:12},(_,i)=>i+1).map(m=>`<option value="${m}"${String(m)===S.curMonth?' selected':''}>${m}</option>`).join('')}</select>월
+    </div></div>
+    <div><div class="lbl">시험 종류</div><input class="ti fi" type="text" value="${S.시험종류}" placeholder="더프, 6평, 9평..." style="width:100px;margin-top:4px" oninput="S.시험종류=this.value"></div>
+    <div style="flex:1"></div>
+    <div style="text-align:right"><div class="month-cur">${S.curYear}년 ${S.curMonth}월 (${S.시험종류})</div>${saved?`<div style="font-size:10px;color:var(--green);margin-top:2px">✓ 저장본 있음</div>`:''}</div>
+  </div>`;
 }
-
-// ── Page: 자동 산출 ─────────────────────────────────
 function pgResults(){
-  let h=`<div class="ph"><h2>자동 산출</h2><p>${S.curYear}년 ${S.curMonth}월 모의고사 성적 파일 업로드</p></div>`;
+  let h=`<div class="ph"><h2>자동 산출</h2><p>성적 파일 업로드 후 자동 계산 · 결과 저장 후 전체 명단에서 성적 조회 가능</p></div>`;
+  h+=monthPanel();
   if(!S.monthConfirmed){
-    h+=`<div class="card" style="margin-bottom:14px;border-color:rgba(201,168,76,.35)">
-      <div class="ch" style="background:rgba(201,168,76,.08)">
-        <span class="ct" style="color:var(--gold2)">📅 업로드 전 월 확인</span>
-      </div>
-      <div style="padding:14px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-        <div>
-          <div style="font-size:11px;color:var(--mu);margin-bottom:4px">현재 작업 월 (사이드바에서 변경 가능)</div>
-          <div style="font-size:20px;font-weight:700;color:var(--gold2)">${S.curYear}년 ${S.curMonth}월</div>
-        </div>
-        <div style="flex:1;font-size:12px;color:var(--mu)">이 월로 파일을 업로드합니다. 월이 맞으면 확인 버튼을 눌러주세요.</div>
-        <button class="btn btn-g" style="white-space:nowrap" onclick="S.monthConfirmed=true;render()">✓ ${S.curMonth}월 확인 후 업로드</button>
-      </div>
-    </div>
-    <div class="urow" style="opacity:.4;pointer-events:none">${ubH('cur','이번달 성적 (필수)','다이닝·퀀텀·수학반 산출')}${ubH('prev','이전달 성적 (향상 계산용)','수학·총합 백분위 향상')}${ubH('ex','기존 장학 명단 (선택)','직방계&장학생 명단 xlsx')}</div>`;
+    h+=`<div class="card" style="margin-bottom:12px;border-color:rgba(181,104,30,.3)"><div class="ch" style="background:rgba(181,104,30,.06)"><span class="ct" style="color:var(--gold2)">📅 ${S.curYear}년 ${S.curMonth}월 (${S.시험종류}) 업로드 진행</span></div>
+    <div style="padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap"><div style="font-size:12px;color:var(--mu);flex:1">위 월과 시험 종류를 확인 후 업로드하세요.</div>
+    <button class="btn btn-g" onclick="S.monthConfirmed=true;render()">✓ 확인 후 업로드</button></div></div>
+    <div class="urow" style="opacity:.4;pointer-events:none">${ubH('cur','이번달 성적 (필수)','다이닝·퀀텀·수학반')}${ubH('prev','이전달 성적 (향상용)','수학·총합 백분위 향상')}${ubH('ex','기존 장학 명단 (선택)','직방계&장학생 xlsx')}</div>`;
     return h;
   }
-  h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-    <span style="font-size:12px;color:var(--mu)">작업 월:</span>
-    <span style="font-size:13px;font-weight:700;color:var(--gold2)">${S.curYear}년 ${S.curMonth}월</span>
-    <button class="btn" style="padding:2px 8px;font-size:11px" onclick="S.monthConfirmed=false;render()">변경</button>
-  </div>`;
-  h+=`<div class="urow">${ubH('cur','이번달 성적 (필수)','다이닝·퀀텀·수학반 산출')}${ubH('prev','이전달 성적 (향상 계산용)','수학·총합 백분위 향상')}${ubH('ex','기존 장학 명단 (선택)','직방계&장학생 명단 xlsx')}</div>`;
+  h+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span style="font-size:13px;font-weight:700;color:var(--gold2)">${S.curYear}년 ${S.curMonth}월 (${S.시험종류})</span><button class="btn" style="padding:2px 8px;font-size:11px" onclick="S.monthConfirmed=false;render()">변경</button></div>`;
+  h+=`<div class="urow">${ubH('cur','이번달 성적 (필수)','다이닝·퀀텀·수학반')}${ubH('prev','이전달 성적 (향상용)','수학·총합 백분위 향상')}${ubH('ex','기존 장학 명단 (선택)','직방계&장학생 xlsx')}</div>`;
   if(S.err)h+=`<div class="err-box">⚠ ${S.err}</div>`;
   if(S.dbg)h+=`<div class="dbg">🔍 ${S.dbg}</div>`;
   if(!S.curStudents)return h+`<div class="empty">이번달 성적 파일을 업로드해 주세요</div>`;
   const r=S.results,ex=Object.keys(S.exMap).length>0;
   const total=[r?.d1,r?.d2,r?.qt].filter(Boolean).length+Object.keys(r?.math||{}).length+(r?.mi?1:0)+(r?.ti?1:0);
-  h+=`<div class="mets">
-    <div class="met"><div class="l">분석 학생</div><div class="v">${S.curStudents.length}</div></div>
-    <div class="met"><div class="l">자동 산출</div><div class="v">${total}건</div></div>
-    <div class="met"><div class="l">수학반 수</div><div class="v">${Object.keys(r?.math||{}).length}</div></div>
-    <div class="met"><div class="l">향상 비교</div><div class="v" style="font-size:14px">${S.prevStudents?'✓':'–'}</div></div>
-    <div class="met"><div class="l">기존 장학</div><div class="v" style="font-size:14px">${ex?'✓':'–'}</div></div>
-  </div>`;
-  const ec=ex?'<th>기존장학</th>':'';
-  const ev=s=>ex?`<td>${S.exMap[String(s.번호)]?`<span class="bx bq">${S.exMap[String(s.번호)]}</span>`:'–'}</td>`:'';
-  const srow=(s,rank)=>`<tr><td class="nn rk1">${rank}</td><td>${s.반}반</td><td class="nn">${s.번호}</td><td class="nm">${s.이름}</td><td>${s.계열}</td><td class="nn rk1">${s.환산.toFixed(1)}</td><td class="dim">${s.국어표준}+${s.수학표준}+${s.탐1표준}+${s.탐2표준}</td><td class="neg">${s.영어등급}등급(-${ENG_D[s.영어등급]??14})</td>${ev(s)}</tr>`;
-  [{s:r?.d1,lbl:'다이닝 장학',bc:'bd',혜택:'식비 100%',rk:'전체 1위'},
-   {s:r?.d2,lbl:'다이닝 하프 장학',bc:'bd',혜택:'식비 50%',rk:'전체 2위'},
-   {s:r?.qt,lbl:'퀀텀 장학',bc:'bm',혜택:'독서실비 100%',rk:'전체 3위'}]
-  .forEach(({s,lbl,bc,혜택,rk})=>{
-    h+=`<div class="card"><div class="ch"><span class="bx ${bc}">${혜택}</span><span class="ct">${lbl}</span><span class="cs">${rk} · 환산표점 기준</span></div>`;
-    h+=s?`<div class="tw"><table class="t"><thead><tr><th>순위</th><th>반</th><th>번호</th><th>이름</th><th>계열</th><th>환산표점</th><th>국+수+탐1+탐2</th><th>영어감점</th>${ec}</tr></thead><tbody>${srow(s,rk)}</tbody></table></div>`:`<div class="empty">대상자 없음</div>`;
+  h+=`<div class="btn-row"><button class="btn btn-g" onclick="saveAutoResults()">☁ 자동산출 저장 (전체 성적 포함)</button><span style="font-size:11px;color:var(--mu)">저장 후 전체 명단 탭에서 학생별 성적 확인 가능</span></div>`;
+  h+=`<div class="mets"><div class="met"><div class="l">분석 학생</div><div class="v">${S.curStudents.length}</div></div><div class="met"><div class="l">자동 산출</div><div class="v">${total}건</div></div><div class="met"><div class="l">수학반 수</div><div class="v">${Object.keys(r?.math||{}).length}</div></div><div class="met"><div class="l">향상 비교</div><div class="v" style="font-size:14px">${S.prevStudents?'✓':'–'}</div></div><div class="met"><div class="l">기존 장학</div><div class="v" style="font-size:14px">${ex?'✓':'–'}</div></div></div>`;
+  const ec=ex?'<th>기존장학</th>':'';const ev=s=>ex?`<td>${S.exMap[String(s.번호)]?`<span class="bx bq">${S.exMap[String(s.번호)]}</span>`:'–'}</td>`:'';
+  const srow=(s,rk)=>`<tr><td class="rk1">${rk}</td><td>${s.반}반</td><td class="nn">${s.번호}</td><td class="nm">${s.이름}</td><td>${s.계열}</td><td class="nn rk1">${s.환산.toFixed(1)}</td><td class="dim">${s.국어표준}+${s.수학표준}+${s.탐1표준}+${s.탐2표준}</td><td class="neg">${s.영어등급}등급(-${ENG_D[s.영어등급]??14})</td>${ev(s)}</tr>`;
+  [{s:r?.d1,c:SCONF.auto.d1,rk:'전체 1위'},{s:r?.d2,c:SCONF.auto.d2,rk:'전체 2위'},{s:r?.qt,c:SCONF.auto.qt,rk:'전체 3위'}].forEach(({s,c,rk})=>{
+    h+=`<div class="card"><div class="ch"><span class="bx ${c.bc}">${c.혜택}</span><span class="ct">${c.lbl}</span><span class="cs">${rk} · 환산표점</span></div>`;
+    h+=s?`<div class="tw"><table class="t"><thead><tr><th>순위</th><th>반</th><th>번호</th><th>이름</th><th>계열</th><th>환산표점</th><th>구성</th><th>영어감점</th>${ec}</tr></thead><tbody>${srow(s,rk)}</tbody></table></div>`:`<div class="empty">대상자 없음</div>`;
     h+=`</div>`;
   });
-  const mr=Object.entries(r?.math||{}).map(([ban,s])=>
-    `<tr><td><b>${ban}반</b></td><td class="nn">${s.번호}</td><td class="nm">${s.이름}</td><td>${s.계열}</td><td class="nn rk1">${s.환산.toFixed(1)}</td><td class="dim">${s.국어표준}+${s.수학표준}+${s.탐1표준}+${s.탐2표준}</td><td class="neg">${s.영어등급}등급(-${ENG_D[s.영어등급]??14})</td><td>${s.수학표준}</td>${ev(s)}</tr>`
-  );
-  h+=`<div class="card"><div class="ch"><span class="bx bm">독서실비 100%</span><span class="ct">각 수학반 1등</span><span class="cs">${mr.length}개 반 · 환산표점 기준</span></div>`;
-  h+=mr.length?`<div class="tw"><table class="t"><thead><tr><th>반</th><th>번호</th><th>이름</th><th>계열</th><th>환산표점</th><th>국+수+탐1+탐2</th><th>영어감점</th><th>수학표준</th>${ec}</tr></thead><tbody>${mr.join('')}</tbody></table></div>`:`<div class="empty">데이터 없음</div>`;
-  h+=`</div>`;
+  const mc=SCONF.auto.math;
+  const mr=Object.entries(r?.math||{}).map(([ban,s])=>`<tr><td><b>${ban}반</b></td><td class="nn">${s.번호}</td><td class="nm">${s.이름}</td><td>${s.계열}</td><td class="nn rk1">${s.환산.toFixed(1)}</td><td class="dim">${s.국어표준}+${s.수학표준}+${s.탐1표준}+${s.탐2표준}</td><td class="neg">${s.영어등급}등급(-${ENG_D[s.영어등급]??14})</td>${ev(s)}</tr>`);
+  h+=`<div class="card"><div class="ch"><span class="bx ${mc.bc}">${mc.혜택}</span><span class="ct">${mc.lbl}</span><span class="cs">${mr.length}개 반</span></div>${mr.length?`<div class="tw"><table class="t"><thead><tr><th>반</th><th>번호</th><th>이름</th><th>계열</th><th>환산표점</th><th>구성</th><th>영어감점</th>${ec}</tr></thead><tbody>${mr.join('')}</tbody></table></div>`:`<div class="empty">데이터 없음</div>`}</div>`;
   if(!S.prevStudents){h+=`<div class="notice">이전달 성적 파일을 업로드하면 향상 장학이 자동 산출됩니다.</div>`;}
   else{
-    [{key:'mi',lbl:'수학 백분위 최고 향상',bc:'bg',desc:'AB열 · 양달응시 & 이전달 0점 제외',
-      eh:['수학백분 향상','이번달 수학백분','이전달 수학백분'],ef:s=>[`<span class="iv">+${s.향상}</span>`,s.수학백분,s.이전수학]},
-     {key:'ti',lbl:'백분위 총합 최고 향상',bc:'bg',desc:'N+AB+BE+BP · 이전달 하나라도 0이면 제외',
-      eh:['총합 향상','이번달 합','이전달 합'],ef:s=>[`<span class="iv">+${s.향상}</span>`,s.백분위합,s.이전합]}]
-    .forEach(({key,lbl,bc,desc,eh,ef})=>{
+    [{key:'mi',c:SCONF.auto.mi,eh:['수학백분 향상','이번달','이전달'],ef:s=>[`<span class="iv">+${s.향상}</span>`,s.수학백분,s.이전수학]},
+     {key:'ti',c:SCONF.auto.ti,eh:['총합 향상','이번달 합','이전달 합'],ef:s=>[`<span class="iv">+${s.향상}</span>`,s.백분위합,s.이전합]}]
+    .forEach(({key,c,eh,ef})=>{
       const s=r?.[key];
-      h+=`<div class="card"><div class="ch"><span class="bx ${bc}">${lbl}</span><span class="cs">${desc}</span></div>`;
-      h+=s?`<div class="tw"><table class="t"><thead><tr><th>반</th><th>번호</th><th>이름</th><th>계열</th>${eh.map(e=>`<th>${e}</th>`).join('')}<th>수학표준</th><th>국어표준</th><th>탐구합산</th>${ec}</tr></thead><tbody>
-        <tr><td>${s.반}반</td><td class="nn">${s.번호}</td><td class="nm">${s.이름}</td><td>${s.계열}</td>${ef(s).map(v=>`<td class="nn">${v}</td>`).join('')}<td>${s.수학표준}</td><td>${s.국어표준}</td><td>${s.탐1표준+s.탐2표준}</td>${ev(s)}</tr>
-      </tbody></table></div>`:`<div class="empty">대상자 없음</div>`;
+      h+=`<div class="card"><div class="ch"><span class="bx ${c.bc}">${c.혜택}</span><span class="ct">${c.lbl}</span></div>`;
+      h+=s?`<div class="tw"><table class="t"><thead><tr><th>반</th><th>번호</th><th>이름</th><th>계열</th>${eh.map(e=>`<th>${e}</th>`).join('')}<th>수학표준</th><th>국어표준</th><th>탐구합</th>${ec}</tr></thead><tbody><tr><td>${s.반}반</td><td class="nn">${s.번호}</td><td class="nm">${s.이름}</td><td>${s.계열}</td>${ef(s).map(v=>`<td class="nn">${v}</td>`).join('')}<td>${s.수학표준}</td><td>${s.국어표준}</td><td>${s.탐1표준+s.탐2표준}</td>${ev(s)}</tr></tbody></table></div>`:`<div class="empty">대상자 없음</div>`;
       h+=`</div>`;
     });
   }
   return h;
 }
-
-// ── Page: 수기 입력 ─────────────────────────────────
-// ── 수기입력 활성 장학 종류
-const ACTIVE_MANUAL=['dasung_in','dasung_nat','honor_in','honor_nat'];
-let _mSel=new Set();
-let _mSort='desc';
-
-function renderStudentList(){
-  const tbody=document.getElementById('m-tbody');if(!tbody)return;
-  const q=(document.getElementById('m-search')?.value||'').trim().toLowerCase();
-  const filterKye=(document.getElementById('m-filter-kye')?.value||'');
-  const students=S.curStudents||[];
-  let visible=students.map((s,i)=>({s,i})).filter(({s})=>{
-    const mq=!q||s.이름.includes(q)||String(s.반).includes(q)||String(s.번호).includes(q);
-    const mk=!filterKye||s.계열===filterKye;
-    return mq&&mk;
-  });
-  if(_mSort==='desc')visible.sort((a,b)=>b.s.환산-a.s.환산);
-  else visible.sort((a,b)=>a.s.환산-b.s.환산);
-  const arrow=_mSort==='desc'?' ▼':' ▲';
-  const thEl=document.getElementById('m-th-hwan');
-  if(thEl)thEl.innerHTML='환산표점<span style="color:var(--gold)">'+arrow+'</span>';
-  let html='';
-  visible.forEach(({s,i})=>{
-    const sel=_mSel.has(i);
-    html+=`<tr style="cursor:pointer${sel?';background:var(--goldb)':''}" onclick="toggleMStudent(${i})">
-      <td style="width:24px;text-align:center;color:var(--gold);font-size:13px">${sel?'✓':''}</td>
-      <td>${s.반}반</td><td class="nn">${s.번호}</td>
-      <td class="nm">${s.이름}</td><td>${s.계열||'–'}</td>
-      <td class="nn">${s.환산.toFixed(1)}</td>
-    </tr>`;
-  });
-  if(!html)html='<tr><td colspan="6" class="empty" style="padding:14px">검색 결과 없음</td></tr>';
-  tbody.innerHTML=html;
-  updMAddBtn();
-}
-function toggleMStudent(i){
-  if(_mSel.has(i))_mSel.delete(i);else _mSel.add(i);
-  renderStudentList();
-}
-function toggleMSort(){
-  _mSort=(_mSort==='desc')?'asc':'desc';
-  renderStudentList();
-}
-function updMAddBtn(){
-  const btn=document.getElementById('m-add-btn');
-  const lbl=document.getElementById('m-sel-lbl');
-  if(!btn||!lbl)return;
-  const schId=document.getElementById('m-sch')?.value;
-  const cnt=_mSel.size;
-  if(cnt>0&&schId){btn.disabled=false;lbl.textContent=cnt+'명 선택됨';lbl.style.color='var(--gold2)';}
-  else if(cnt>0){btn.disabled=true;lbl.textContent=cnt+'명 선택됨 · 장학 종류를 선택하세요';lbl.style.color='var(--mu)';}
-  else{btn.disabled=true;lbl.textContent='학생을 선택하세요';lbl.style.color='var(--mu)';}
-}
-function addManualStudent(){
-  const schId=document.getElementById('m-sch')?.value;
-  if(!schId||!_mSel.size)return;
-  if(!S.manual[schId])S.manual[schId]=[];
-  const already=new Set((S.manual[schId]||[]).map(r=>String(r.학번)));
-  _mSel.forEach(i=>{
-    const s=S.curStudents[i];
-    if(already.has(String(s.번호)))return;
-    S.manual[schId].push({반:s.반,학번:s.번호,이름:s.이름,계열:s.계열,환산점수:s.환산.toFixed(1),비고:''});
-  });
-  _mSel=new Set();
-  autoSaveManual();render();
-}
-function delManualStudent(schId,ri){S.manual[schId].splice(ri,1);autoSaveManual();render();}
-function updManualNote(schId,ri,val){if(S.manual[schId]?.[ri])S.manual[schId][ri].비고=val;autoSaveManual();}
-
 function pgManual(){
   const hasStudents=!!S.curStudents;
-  let h=`<div class="ph"><h2>수기 입력</h2><p>이번달 학생 명단에서 선택 · Firestore 자동저장</p></div>`;
-  h+=`<div class="card" style="margin-bottom:12px">
-    <div class="ch"><span class="ct">장학생 추가</span><span class="cs">${hasStudents?S.curStudents.length+'명 로드됨':'성적 파일 미업로드'}</span></div>
-    <div style="padding:12px 14px">
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
-        <select id="m-sch" class="fi" style="min-width:230px" onchange="updMAddBtn()">
-          <option value="">— 장학 종류 선택 —</option>
-          <optgroup label="교습비 100%">
-            <option value="dasung_in">대성학원 전체 1등 (인문)</option>
-            <option value="dasung_nat">대성학원 전체 1등 (자연)</option>
-          </optgroup>
-          <optgroup label="매점상품권 5만원권">
-            <option value="honor_in">성적우수자 (인문)</option>
-            <option value="honor_nat">성적우수자 (자연)</option>
-          </optgroup>
-        </select>
-        <select id="m-filter-kye" class="fi" style="width:90px" onchange="renderStudentList()">
-          <option value="">계열 전체</option>
-          <option value="인문">인문</option>
-          <option value="자연">자연</option>
-        </select>
-        <div style="position:relative;flex:1;max-width:220px">
-          <input class="fi" id="m-search" type="text" placeholder="이름, 반, 번호 검색..." style="width:100%;padding-left:26px" oninput="renderStudentList()">
-          <span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);color:var(--mu);pointer-events:none;font-size:11px">🔍</span>
-        </div>
-      </div>`;
-  if(!hasStudents){
-    h+=`<div class="notice">자동 산출 탭에서 이번달 성적 파일을 먼저 업로드해 주세요.</div>`;
-  } else {
-    h+=`<div style="border:1px solid var(--bo);border-radius:7px;overflow:hidden;max-height:220px;overflow-y:auto">
-      <table class="t">
-        <thead><tr>
-          <th></th><th>반</th><th>번호</th><th>이름</th><th>계열</th>
-          <th id="m-th-hwan" onclick="toggleMSort()" style="cursor:pointer;user-select:none;white-space:nowrap">환산표점 <span style="color:var(--gold)">▼</span></th>
-        </tr></thead>
-        <tbody id="m-tbody"></tbody>
-      </table>
-    </div>
-    <div style="display:flex;justify-content:flex-end;margin-top:10px;gap:8px;align-items:center">
+  let h=`<div class="ph"><h2>수기 입력</h2><p>${S.curYear}년 ${S.curMonth}월 · 학생 명단에서 선택해 장학 추가</p></div>`;
+  h+=`<div class="card" style="margin-bottom:12px"><div class="ch"><span class="ct">장학생 추가</span><span class="cs">${hasStudents?S.curStudents.length+'명 로드됨':'성적 파일 미업로드'}</span></div>
+  <div style="padding:12px 14px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+      <select id="m-sch" class="fi" style="min-width:210px" onchange="updMAddBtn()">
+        <option value="">— 장학 종류 선택 —</option>
+        <optgroup label="교습비 100%"><option value="dasung_in">${SCONF.manual.dasung_in.lbl}</option><option value="dasung_nat">${SCONF.manual.dasung_nat.lbl}</option></optgroup>
+        <optgroup label="매점상품권 5만원권"><option value="honor_in">${SCONF.manual.honor_in.lbl}</option><option value="honor_nat">${SCONF.manual.honor_nat.lbl}</option></optgroup>
+      </select>
+      <select id="m-filter-kye" class="fi" style="width:84px" onchange="renderStudentList()"><option value="">계열 전체</option><option value="인문">인문</option><option value="자연">자연</option></select>
+      <div style="position:relative;flex:1;max-width:200px"><input class="fi" id="m-search" type="text" placeholder="이름, 반, 번호..." style="width:100%;padding-left:22px" oninput="renderStudentList()"><span style="position:absolute;left:7px;top:50%;transform:translateY(-50%);color:var(--mu);font-size:11px;pointer-events:none">🔍</span></div>
+    </div>`;
+  if(!hasStudents){h+=`<div class="notice">자동 산출 탭에서 성적 파일을 업로드하면 학생 명단이 표시됩니다.</div>`;}
+  else{
+    h+=`<div style="border:1px solid var(--bo);border-radius:7px;overflow:hidden;max-height:200px;overflow-y:auto">
+      <table class="t"><thead><tr><th></th><th>반</th><th>번호</th><th>이름</th><th>계열</th>
+      <th id="m-th-hwan" onclick="toggleMSort()" style="cursor:pointer;user-select:none">환산표점 <span style="color:var(--amber)">▼</span></th>
+      </tr></thead><tbody id="m-tbody"></tbody></table></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:8px;gap:8px;align-items:center">
       <span id="m-sel-lbl" style="font-size:12px;color:var(--mu)">학생을 선택하세요</span>
       <button class="btn btn-g" id="m-add-btn" disabled onclick="addManualStudent()">+ 장학 추가</button>
     </div>`;
   }
   h+=`</div></div>`;
-  // 입력된 수기 장학생 목록
   const allEntries=[];
-  ACTIVE_MANUAL.forEach(id=>{
-    (S.manual[id]||[]).forEach((r,ri)=>{if(r.이름)allEntries.push({...r,schId:id,ri});});
-  });
+  ACTIVE_MANUAL.forEach(id=>{(S.manual[id]||[]).forEach((r,ri)=>{if(r.이름)allEntries.push({...r,schId:id,ri});});});
   h+=`<div class="card"><div class="ch"><span class="ct">입력된 수기 장학생</span><span class="cs">${allEntries.length}건</span></div>`;
-  if(!allEntries.length){
-    h+=`<div class="empty">아직 추가된 학생이 없습니다</div>`;
-  } else {
-    h+=`<div class="tw"><table class="t"><thead><tr>
-      <th>장학명</th><th>혜택</th><th>반</th><th>번호</th><th>이름</th><th>계열</th><th>환산</th><th>비고</th><th></th>
-    </tr></thead><tbody>`;
-    allEntries.forEach(r=>{
-      const def=MDEFS.find(d=>d.id===r.schId);
-      h+=`<tr>
-        <td><span class="bx ${def.bc}">${def.lbl}</span></td>
-        <td style="font-size:11px;color:var(--mu)">${def.혜택}</td>
-        <td>${r.반}반</td><td class="nn">${r.학번||''}</td>
-        <td class="nm">${r.이름}</td><td>${r.계열||'–'}</td>
-        <td class="nn">${r.환산점수||'–'}</td>
-        <td><input class="fi" style="width:100px" placeholder="비고" value="${(r.비고||'').replace(/"/g,'&quot;')}" oninput="updManualNote('${r.schId}',${r.ri},this.value)"></td>
-        <td><button class="rdel" onclick="delManualStudent('${r.schId}',${r.ri})">✕</button></td>
-      </tr>`;
-    });
+  if(!allEntries.length){h+=`<div class="empty">아직 추가된 학생이 없습니다</div>`;}
+  else{
+    h+=`<div class="tw"><table class="t"><thead><tr><th>장학명</th><th>혜택</th><th>반</th><th>번호</th><th>이름</th><th>계열</th><th>환산</th><th>비고</th><th></th></tr></thead><tbody>`;
+    allEntries.forEach(r=>{const def=SCONF.manual[r.schId];h+=`<tr><td><span class="bx ${def.bc}">${def.lbl}</span></td><td style="font-size:11px;color:var(--mu)">${def.혜택}</td><td>${r.반}반</td><td class="nn">${r.학번||''}</td><td class="nm">${r.이름}</td><td>${r.계열||'–'}</td><td class="nn">${r.환산점수||'–'}</td><td><input class="fi" style="width:100px" placeholder="비고" value="${(r.비고||'').replace(/"/g,'&quot;')}" oninput="updManualNote('${r.schId}',${r.ri},this.value)"></td><td><button class="rdel" onclick="delManualStudent('${r.schId}',${r.ri})">✕</button></td></tr>`;});
     h+=`</tbody></table></div>`;
   }
-  h+=`</div>`;
-  return h;
+  h+=`</div>`;return h;
 }
-
-// ── Page: 최종 명단 ─────────────────────────────────
 function pgFinal(){
-  const months=Object.keys(S.accumulated).sort();
-  const pastMonths=months.filter(k=>k!==mkey());
-
-  // ── 과거 월 조회 모드
+  const months=Object.keys(S.accumulated).sort();const pastMonths=months.filter(k=>k!==mkey());
   if(S.finalViewMonth&&S.accumulated[S.finalViewMonth]){
-    const d=S.accumulated[S.finalViewMonth];
-    const winners=d.winners||[];
-    const act=winners.filter(w=>!w.excluded).length;
-    let h=`<div class="ph"><h2>최종 명단</h2><p>${d.label||fmtKey(S.finalViewMonth)} 저장본 조회 (읽기 전용)</p></div>`;
-    h+=`<div class="btn-row">
-      <button class="btn" onclick="S.finalViewMonth=null;render()">← 이번달 (${S.curYear}년 ${S.curMonth}월)로 돌아가기</button>
-      <select class="fi" onchange="S.finalViewMonth=this.value||null;render()">
-        <option value="">— 월 선택 —</option>
-        ${months.map(k=>`<option value="${k}"${k===S.finalViewMonth?' selected':''}>${fmtKey(k)}</option>`).join('')}
-      </select>
-    </div>`;
-    h+=`<div style="background:rgba(91,155,213,.08);border:1px solid rgba(91,155,213,.2);border-radius:7px;padding:8px 12px;font-size:12px;color:var(--blue);margin-bottom:12px">
-      📁 ${d.label||fmtKey(S.finalViewMonth)} 저장본 · 총 ${winners.length}건 | 제외 ${winners.length-act}건 | 최종 ${act}건 · 저장일: ${d.savedAt?new Date(d.savedAt).toLocaleDateString('ko-KR'):'–'}
-    </div>`;
+    const d=S.accumulated[S.finalViewMonth];const winners=d.winners||[];const act=winners.filter(w=>!w.excluded).length;
+    let h=`<div class="ph"><h2>최종 명단</h2><p>${fullLbl(S.finalViewMonth)} 저장본 (읽기 전용)</p></div>`;
+    h+=`<div class="btn-row"><button class="btn" onclick="S.finalViewMonth=null;render()">← 이번달로</button><select class="fi" onchange="S.finalViewMonth=this.value||null;render()"><option value="">— 월 선택 —</option>${months.map(k=>`<option value="${k}"${k===S.finalViewMonth?' selected':''}>${fullLbl(k)}</option>`).join('')}</select></div>`;
+    h+=`<div class="notice">📁 ${fullLbl(S.finalViewMonth)} · 총 ${winners.length}건 | 최종 ${act}건</div>`;
     if(!winners.length)return h+`<div class="empty">저장된 장학생이 없습니다.</div>`;
-    h+=`<div class="card"><div class="tw"><table class="t"><thead><tr>
-      <th>상태</th><th>장학명</th><th>혜택</th><th>반</th><th>번호/학번</th><th>이름</th><th>계열</th><th>환산/향상</th><th>기존장학</th><th>중복여부</th>
-    </tr></thead><tbody>`;
-    winners.forEach(w=>{
-      const ex=w.excluded;
-      const dup=w.dup?.length?`<span class="dup">중복</span>`:'';
-      const dupFull=w.dup?.length?w.dup.join(', '):'–';
-      const _exg=w.기존장학||'';const exg=_exg?`<span class="bx bq">${_exg}</span>`:'–';
-      h+=`<tr class="${ex?'ex':''}">
-        <td style="font-size:11px;color:${ex?'var(--red)':'var(--green)'}">${ex?'제외':'✓'}</td>
-        <td><span class="bx ${w.bc}">${w.lbl}</span></td>
-        <td style="font-size:11px;color:var(--mu)">${w.혜택}</td>
-        <td>${w.반?w.반+'반':''}</td>
-        <td class="nn">${w.번호||'–'}</td>
-        <td class="nm">${w.이름}${dup}</td>
-        <td>${w.계열||'–'}</td>
-        <td class="nn">${w.val}</td>
-        <td>${exg}</td>
-        <td style="font-size:11px;color:${w.dup?.length?'var(--red)':'var(--mu)'}">${dupFull}</td>
-      </tr>`;
-    });
-    h+=`</tbody></table></div></div>`;
-    return h;
+    h+=`<div class="card"><div class="tw"><table class="t"><thead><tr><th>상태</th><th>장학명</th><th>혜택</th><th>반</th><th>번호</th><th>이름</th><th>계열</th><th>환산/향상</th><th>기존장학</th><th>비고</th></tr></thead><tbody>`;
+    winners.forEach(w=>{const ex=w.excluded;const _exg=w.기존장학||'';const exg=_exg?`<span class="bx bq">${_exg}</span>`:'–';h+=`<tr class="${ex?'ex':''}"><td style="color:${ex?'var(--red)':'var(--green)'};font-size:11px">${ex?'제외':'✓'}</td><td><span class="bx ${w.bc}">${w.lbl}</span></td><td style="font-size:11px;color:var(--mu)">${w.혜택}</td><td>${w.반?w.반+'반':''}</td><td class="nn">${w.번호||'–'}</td><td class="nm">${w.이름}</td><td>${w.계열||'–'}</td><td class="nn">${w.val}</td><td>${exg}</td><td style="font-size:11px;color:var(--mu)">${w.비고||''}</td></tr>`;});
+    h+=`</tbody></table></div></div>`;return h;
   }
-
-  // ── 이번달 작업 모드
   _ws=getAllWinners();
   const act=_ws.filter((_,i)=>!S.excluded.has(wkey(_ws[i]))).length;
   let h=`<div class="ph"><h2>최종 명단</h2><p>${S.curYear}년 ${S.curMonth}월 · 총 ${_ws.length}건 | 제외 ${S.excluded.size}건 | 최종 ${act}건</p></div>`;
-  h+=`<div class="btn-row">
-    <button class="btn btn-g" onclick="exportExcel()">⬇ 엑셀 다운로드</button>
-    <button class="btn btn-gr" onclick="saveToFirestore().then(()=>render())">☁ 이번달 저장</button>
-    ${pastMonths.length?`<select class="fi" style="margin-left:auto" onchange="if(this.value){S.finalViewMonth=this.value;render();}this.value=''">
-      <option value="">📅 지난달 명단 조회...</option>
-      ${pastMonths.slice().reverse().map(k=>`<option value="${k}">${fmtKey(k)}</option>`).join('')}
-    </select>`:''}
-  </div>
-  <div style="font-size:11px;color:var(--mu);margin-bottom:10px">체크 = 제외(줄 긋기) · Firestore 자동저장</div>`;
+  h+=`<div class="btn-row"><button class="btn btn-g" onclick="exportExcel()">⬇ 엑셀 다운로드</button><button class="btn btn-gr" onclick="saveToFirestore().then(()=>render())">☁ 이번달 저장</button>${pastMonths.length?`<select class="fi" style="margin-left:auto" onchange="if(this.value){S.finalViewMonth=this.value;render();}this.value=''"><option value="">📅 지난달 명단 조회...</option>${pastMonths.slice().reverse().map(k=>`<option value="${k}">${fullLbl(k)}</option>`).join('')}</select>`:''}</div>`;
+  h+=`<div style="font-size:11px;color:var(--mu);margin-bottom:10px">☑ 체크 = 제외(줄 긋기) · 비고 입력 후 저장시 엑셀에도 반영</div>`;
   if(!_ws.length)return h+`<div class="empty">산출된 장학생이 없습니다.</div>`;
-  h+=`<div class="card"><div class="tw"><table class="t"><thead><tr>
-    <th>제외</th><th>장학명</th><th>혜택</th><th>반</th><th>번호/학번</th><th>이름</th><th>계열</th><th>환산/향상</th><th>기존장학</th><th>중복여부</th>
-  </tr></thead><tbody>`;
+  h+=`<div class="card"><div class="tw"><table class="t"><thead><tr><th>제외</th><th>장학명</th><th>혜택</th><th>반</th><th>번호</th><th>이름</th><th>계열</th><th>환산/향상</th><th>기존장학</th><th>중복</th><th style="min-width:120px">비고</th></tr></thead><tbody>`;
   _ws.forEach((w,i)=>{
     const k=wkey(w);const ex=S.excluded.has(k);
     const dup=w.dup?.length?`<span class="dup">중복</span>`:'';
-    const dupFull=w.dup?.length?w.dup.join(', '):'–';
+    const dupFull=w.dup?.length?w.dup.slice(0,1).join('')+(w.dup.length>1?'외':''):'–';
     const _exg=S.exMap[String(w.번호)]||w.기존장학||'';const exg=_exg?`<span class="bx bq">${_exg}</span>`:'–';
-    h+=`<tr class="${ex?'ex':''}">
-      <td><input type="checkbox" ${ex?'checked':''} onchange="toggleExcl(${i})"></td>
-      <td><span class="bx ${w.bc}">${w.lbl}</span></td>
-      <td style="font-size:11px;color:var(--mu)">${w.혜택}</td>
-      <td>${w.반?w.반+'반':''}</td>
-      <td class="nn">${w.번호||'–'}</td>
-      <td class="nm">${w.이름}${dup}</td>
-      <td>${w.계열||'–'}</td>
-      <td class="nn">${w.val}</td>
-      <td>${exg}</td>
-      <td style="font-size:11px;color:${w.dup?.length?'var(--red)':'var(--mu)'}">${dupFull}</td>
-    </tr>`;
+    h+=`<tr class="${ex?'ex':''}"><td><input type="checkbox" ${ex?'checked':''} onchange="toggleExcl(${i})"></td><td><span class="bx ${w.bc}">${w.lbl}</span></td><td style="font-size:11px;color:var(--mu)">${w.혜택}</td><td>${w.반?w.반+'반':''}</td><td class="nn">${w.번호||'–'}</td><td class="nm">${w.이름}${dup}</td><td>${w.계열||'–'}</td><td class="nn">${w.val}</td><td>${exg}</td><td style="font-size:11px;color:${w.dup?.length?'var(--red)':'var(--mu)'}">${dupFull}</td><td><input class="fi" style="width:110px;font-size:11px" placeholder="비고..." value="${(S.remarks[k]||'').replace(/"/g,'&quot;')}" oninput="updRemark(${i},this.value)"></td></tr>`;
   });
-  h+=`</tbody></table></div></div>`;
-  return h;
+  h+=`</tbody></table></div></div>`;return h;
 }
-
-// ── Chart builder ─────────────────────────────────
-function buildLineChart(months, acc){
-  const W=560,H=200,PL=48,PR=20,PT=16,PB=36;
-  const iW=W-PL-PR,iH=H-PT-PB;
-  const n=months.length;
-  // 전체 평균
-  const ovAvgs=months.map(k=>+(acc[k].overallAvg||0));
-  // 반 목록 수집
-  const banSet=new Set();
-  months.forEach(k=>(acc[k].classStats||[]).forEach(s=>banSet.add(s.반)));
-  const bans=[...banSet].sort((a,b)=>a-b);
-  // 반별 평균 데이터
-  const banData={};
-  bans.forEach(b=>{banData[b]=months.map(k=>{const s=(acc[k].classStats||[]).find(x=>x.반===b);return s?+s.환산:null;});});
-  // 전체 min/max
-  let allVals=[...ovAvgs];
-  bans.forEach(b=>allVals.push(...banData[b].filter(v=>v!==null)));
-  const mn=Math.min(...allVals),mx=Math.max(...allVals);
-  const pad=(mx-mn)*0.1||5;
-  const lo=mn-pad,hi=mx+pad;
-  const xp=i=>PL+i*(iW/(n-1));
-  const yp=v=>PT+iH-(((v-lo)/(hi-lo))*iH);
-  // 색상 팔레트
-  const COLORS=['#5b9bd5','#5da87a','#d4a039','#d97c6a','#9b7dd4','#4ec9c9','#e07b9b','#a0c45a'];
-  let svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:${W}px;display:block;margin:0 auto;overflow:visible">`;
-  // 배경 그리드
-  const ticks=4;
-  for(let i=0;i<=ticks;i++){
-    const y=PT+iH*(i/ticks);
-    const v=(hi-lo)*(1-i/ticks)+lo;
-    svg+=`<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="rgba(244,241,235,.07)" stroke-width="1"/>`;
-    svg+=`<text x="${PL-4}" y="${y+4}" text-anchor="end" font-size="9" fill="rgba(244,241,235,.4)">${v.toFixed(0)}</text>`;
-  }
-  // X축 라벨
-  months.forEach((k,i)=>{
-    const lbl=(acc[k].label||fmtKey(k)).replace(/\d{4}년 /,'');
-    svg+=`<text x="${xp(i)}" y="${H-4}" text-anchor="middle" font-size="9" fill="rgba(244,241,235,.5)">${lbl}</text>`;
-    svg+=`<line x1="${xp(i)}" y1="${PT}" x2="${xp(i)}" y2="${H-PB}" stroke="rgba(244,241,235,.04)" stroke-width="1"/>`;
-  });
-  // 반별 선
-  bans.forEach((b,ci)=>{
-    const pts=banData[b];
-    const col=COLORS[ci%COLORS.length];
-    let path='';
-    pts.forEach((v,i)=>{if(v===null)return;if(!path)path=`M${xp(i)},${yp(v)}`;else path+=`L${xp(i)},${yp(v)}`;});
-    if(path)svg+=`<path d="${path}" fill="none" stroke="${col}" stroke-width="1.5" stroke-dasharray="4 2" opacity=".6"/>`;
-    pts.forEach((v,i)=>{if(v===null)return;svg+=`<circle cx="${xp(i)}" cy="${yp(v)}" r="2.5" fill="${col}" opacity=".7"><title>${acc[months[i]].label||months[i]} ${b}반: ${v.toFixed(1)}</title></circle>`;});
-  });
-  // 전체 평균 선 (굵게)
-  let oPath='';
-  ovAvgs.forEach((v,i)=>{oPath+=i===0?`M${xp(i)},${yp(v)}`:`L${xp(i)},${yp(v)}`;});
-  svg+=`<path d="${oPath}" fill="none" stroke="#c9a84c" stroke-width="2.5"/>`;
-  ovAvgs.forEach((v,i)=>{
-    svg+=`<circle cx="${xp(i)}" cy="${yp(v)}" r="4" fill="#c9a84c"><title>${acc[months[i]].label||months[i]} 전체: ${v.toFixed(1)}</title></circle>`;
-    svg+=`<text x="${xp(i)}" y="${yp(v)-8}" text-anchor="middle" font-size="9" fill="#e8c97a" font-weight="700">${v.toFixed(1)}</text>`;
-  });
-  svg+=`</svg>`;
-  // 범례
-  let legend=`<div style="display:flex;flex-wrap:wrap;gap:8px 14px;padding:8px 12px 12px;font-size:11px">`;
-  legend+=`<span style="color:#c9a84c;font-weight:700">● 전체평균</span>`;
-  bans.forEach((b,ci)=>{legend+=`<span style="color:${COLORS[ci%COLORS.length]};opacity:.8">- ${b}반</span>`;});
-  legend+=`</div>`;
-  return `<div class="card" style="margin-bottom:12px"><div style="padding:12px 8px 0">${svg}</div>${legend}</div>`;
-}
-
-// ── Page: 통계 & 누적 ─────────────────────────────────
-function pgStats(){
-  let h=`<div class="ph"><h2>통계 & 누적</h2><p>반별 환산표점 평균 · 월별 이력 · 학생별 수상 통계</p></div>`;
-  // 이번달 반별 통계: 실시간 또는 Firestore 저장본 fallback
-  const curMk=mkey();
-  const savedCur=S.accumulated[curMk];
-  const curStats=S.curStudents
-    ? [...calcClassStats()].sort((a,b)=>b.환산-a.환산)
-    : [...(savedCur?.classStats||[])].sort((a,b)=>b.환산-a.환산);
-  const curOvg=S.curStudents ? overallAvg() : (savedCur?.overallAvg||null);
-  const curTotalN=S.curStudents ? S.curStudents.length : (curStats.reduce((s,v)=>s+(v.인원||0),0)||null);
-  const hasCurData=curStats.length>0;
-
-  // 지난달: 현재 월보다 이전 저장 중 가장 최근
-  const allMkeys=Object.keys(S.accumulated).sort();
-  const prevMk=allMkeys.filter(k=>k<curMk).slice(-1)[0]||null;
-  const prevStats=prevMk?(S.accumulated[prevMk].classStats||[]):[];
-  const prevOvg=prevMk?(S.accumulated[prevMk].overallAvg||null):null;
-  const prevMap={};prevStats.forEach(s=>{prevMap[s.반]=s;});
-  const prevLbl=prevMk?(S.accumulated[prevMk].label||fmtKey(prevMk)):'';
-  const curLbl=savedCur?.label||`${S.curYear}년 ${S.curMonth}월`;
-
-  if(hasCurData){
-    h+=`<div class="sec-title">📊 ${curLbl} 반별 환산표점 평균 <span style="font-size:11px;color:var(--mu);font-weight:400">(이번달 내림차순${prevLbl?' · '+prevLbl+' 비교':''})</span></div>`;
-    if(!S.curStudents)h+=`<div class="notice" style="margin-bottom:8px">📂 저장된 데이터 표시 중 · 새 파일 업로드 시 갱신됩니다</div>`;
-    h+=`<div class="card"><div class="tw"><table class="t"><thead><tr>
-      <th>순위</th><th>반</th><th>인원</th>
-      <th>이번달 환산</th><th>국어</th><th>수학</th><th>탐구합산</th>
-      ${prevLbl?`<th>지난달 환산</th><th>변화</th>`:''}
-    </tr></thead><tbody>`;
-    curStats.forEach((s,idx)=>{
-      const prev=prevMap[s.반];
-      const diff=prev!=null?(+s.환산-(+prev.환산)):null;
-      const diffStr=diff===null?'–':(diff>0?`<span style="color:var(--green);font-weight:600">▲${diff.toFixed(1)}</span>`:diff<0?`<span style="color:var(--red);font-weight:600">▼${Math.abs(diff).toFixed(1)}</span>`:`<span style="color:var(--mu)">–</span>`);
-      h+=`<tr>
-        <td style="color:var(--mu);font-size:11px">${idx+1}</td>
-        <td style="font-weight:700;color:var(--gold2)">${s.반}반</td>
-        <td style="color:var(--mu)">${s.인원}명</td>
-        <td style="font-weight:700;color:var(--gold2)">${(+s.환산).toFixed(1)}</td>
-        <td>${(+s.국어).toFixed(1)}</td>
-        <td>${(+s.수학).toFixed(1)}</td>
-        <td>${((+s.탐1)+(+s.탐2)).toFixed(1)}</td>
-        ${prevLbl?`<td style="color:var(--mu)">${prev?(+prev.환산).toFixed(1):'–'}</td><td>${diffStr}</td>`:''}
-      </tr>`;
-    });
-    if(curOvg){
-      const ovgDiff=prevOvg?(curOvg-prevOvg):null;
-      const ovgDiffStr=ovgDiff===null?'–':(ovgDiff>0?`<span style="color:var(--green);font-weight:600">▲${ovgDiff.toFixed(1)}</span>`:ovgDiff<0?`<span style="color:var(--red);font-weight:600">▼${Math.abs(ovgDiff).toFixed(1)}</span>`:`<span style="color:var(--mu)">–</span>`);
-      h+=`<tr style="background:var(--goldb);font-weight:700">
-        <td style="color:var(--mu)">–</td>
-        <td style="color:var(--gold2)">전 체</td>
-        <td style="color:var(--mu)">${curTotalN?curTotalN+'명':'–'}</td>
-        <td style="color:var(--gold2)">${curOvg.toFixed(1)}</td>
-        <td colspan="3" style="color:var(--mu);font-size:11px">전체 평균</td>
-        ${prevLbl?`<td style="color:var(--mu)">${prevOvg?prevOvg.toFixed(1):'–'}</td><td>${ovgDiffStr}</td>`:''}
-      </tr>`;
-    }
-    h+=`</tbody></table></div></div>`;
-  } else {
-    h+=`<div class="notice">이번달 성적 파일을 업로드하거나, 최종 명단 저장 후 이용하세요.</div>`;
-  }
+function pgAll(){
   const months=Object.keys(S.accumulated).sort();
-  if(months.length){
-    h+=`<div class="sec-title">📅 월별 장학 누적 현황</div>`;
-    h+=`<div class="card"><div class="tw"><table class="t"><thead><tr><th>월</th><th>총 수여</th><th>최종(제외 후)</th><th>환산표점 전체 평균</th><th>저장일</th></tr></thead><tbody>`;
-    months.slice().reverse().forEach(k=>{
-      const d=S.accumulated[k];
-      const act=(d.winners||[]).filter(w=>!w.excluded).length;
-      h+=`<tr><td style="color:var(--gold2);font-weight:500">${d.label||fmtKey(k)}</td><td>${(d.winners||[]).length}건</td><td>${act}건</td><td>${d.overallAvg?d.overallAvg.toFixed(1):'–'}</td><td style="font-size:11px;color:var(--mu)">${d.savedAt?new Date(d.savedAt).toLocaleDateString('ko-KR'):'–'}</td></tr>`;
-    });
-    h+=`</tbody></table></div></div>`;
+  const avail=months.filter(k=>S.allStudentsData[k]||S.accumulated[k]?.allStudents);
+  let h=`<div class="ph"><h2>전체 명단</h2><p>월별 전체 학생 성적 상세 조회</p></div>`;
+  const mk=S.allViewMonth||(avail.includes(mkey())?mkey():avail.slice(-1)[0]||mkey());
+  h+=`<div class="btn-row"><select class="fi" onchange="S.allViewMonth=this.value||null;render()"><option value="">— 월 선택 —</option>${avail.slice().reverse().map(k=>`<option value="${k}"${k===mk?' selected':''}>${fullLbl(k)}</option>`).join('')}</select></div>`;
+  const students=S.allStudentsData[mk]||S.accumulated[mk]?.allStudents||(mk===mkey()?S.curStudents:null);
+  if(!students||!students.length)return h+`<div class="notice">이 월의 성적 데이터가 없습니다. 자동 산출 탭에서 성적 파일 업로드 후 "자동산출 저장"을 눌러주세요.</div>`;
+  h+=`<div class="card" style="margin-bottom:10px"><div style="padding:10px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input class="fi" id="all-q" type="text" placeholder="이름, 반, 번호 검색..." style="width:180px" oninput="filterAllTable(this.value)"><select class="fi" id="all-kye" onchange="filterAllTable(document.getElementById('all-q').value)"><option value="">계열 전체</option><option value="인문">인문</option><option value="자연">자연</option></select><span style="font-size:12px;color:var(--mu)">총 ${students.length}명</span></div></div>`;
+  h+=`<div class="card"><div class="tw"><table class="t" id="all-table"><thead><tr><th>반</th><th>코드</th><th>번호</th><th>이름</th><th>계열</th><th>영어</th><th class="num">국어표준</th><th class="num">국어백분</th><th class="num">수학표준</th><th class="num">수학백분</th><th class="num">탐1표준</th><th class="num">탐1백분</th><th class="num">탐2표준</th><th class="num">탐2백분</th><th class="num">백분위합</th><th class="num">환산표점</th></tr></thead><tbody id="all-tbody">`;
+  const rows=[...students].sort((a,b)=>b.환산-a.환산);
+  rows.forEach(s=>{h+=`<tr data-name="${s.이름}" data-ban="${s.반}" data-num="${s.번호}" data-kye="${s.계열}"><td>${s.반}반</td><td style="color:var(--gold2);font-weight:600">${BAN_CODE[String(s.반)]||'–'}</td><td class="nn">${s.번호}</td><td class="nm">${s.이름}</td><td>${s.계열}</td><td class="num">${s.영어등급}등급</td><td class="num">${s.국어표준}</td><td class="num">${s.국어백분}</td><td class="num">${s.수학표준}</td><td class="num">${s.수학백분}</td><td class="num">${s.탐1표준}</td><td class="num">${s.탐1백분}</td><td class="num">${s.탐2표준}</td><td class="num">${s.탐2백분}</td><td class="num rk1">${s.백분위합}</td><td class="num rk1">${s.환산.toFixed(1)}</td></tr>`;});
+  h+=`</tbody></table></div></div>`;return h;
+}
+function filterAllTable(q){
+  const kye=document.getElementById('all-kye')?.value||'';
+  document.querySelectorAll('#all-tbody tr').forEach(tr=>{
+    const mq=!q||tr.dataset.name?.includes(q)||tr.dataset.ban?.includes(q)||tr.dataset.num?.includes(q);
+    const mk=!kye||tr.dataset.kye===kye;
+    tr.style.display=(mq&&mk)?'':'none';
+  });
+}
+function getWinnerKye(w){if(w.계열)return w.계열;if(w.lbl.includes('인문'))return'인문';if(w.lbl.includes('자연'))return'자연';return'';}
+const BILL_IDS=['billboard_in','billboard_nat','honor_in','honor_nat'];
+function isBillboard(w){return BILL_IDS.some(id=>SCONF.manual[id]&&w.lbl===SCONF.manual[id].lbl);}
 
-    // ── 그래프: 월별 환산표점 평균 추이
-    const chartMonths=months.filter(k=>S.accumulated[k].overallAvg);
-    if(chartMonths.length>=2){
-      h+=`<div class="sec-title">📈 월별 환산표점 평균 추이</div>`;
-      h+=buildLineChart(chartMonths,S.accumulated);
-    }
-    h+=`<div class="sec-title">🏆 학생별 수상 이력</div>`;
-    const sm={};
+function pgStats(){
+  let h=`<div class="ph"><h2>통계 & 누적</h2><p>반별 성적 추이 · 장학 인원 통계 · 학생별 수상 이력</p></div>`;
+  const months=Object.keys(S.accumulated).sort();
+  if(!months.length)return h+`<div class="notice">저장된 데이터가 없습니다. 최종 명단 탭에서 "이번달 저장"을 눌러 데이터를 쌓으세요.</div>`;
+
+  const mhdr=months.map(k=>{const d=S.accumulated[k];const lbl=(d.label||mlbl(k)).replace(/\d{4}년 /,'');const jt=d.시험종류||'';return`<th>${lbl}${jt?`<br><span style='font-size:9px;font-weight:400'>(${jt})</span>`:''}</th>`;}).join('');
+  const mhdrShort=months.map(k=>{const d=S.accumulated[k];return`<th>${(d.label||mlbl(k)).replace(/\d{4}년 /,'')}</th>`;}).join('');
+
+  // ── 표1: 반별 환산표점 평균
+  h+=`<div class="sec-title">📊 반별 환산표점 평균 추이</div>`;
+  h+=`<div class="card"><div class="tw"><table class="stat-t"><thead><tr><th class="lh">반</th><th class="lh">반코드</th>${mhdr}</tr></thead><tbody>`;
+  BAN_LIST.forEach(ban=>{
+    h+=`<tr><td class="lh">${BAN_CODE[ban]||ban}</td><td class="lh" style="color:var(--mu);font-size:11px">${ban}</td>`;
+    months.forEach(k=>{const s=(S.accumulated[k].classStats||[]).find(x=>String(x.반)===ban);h+=s?`<td>${(+s.환산).toFixed(1)}</td>`:`<td class="zero">–</td>`;});
+    h+=`</tr>`;
+  });
+  h+=`<tr><td class="tot-lh">평균</td><td class="tot-lh" style="font-size:11px">전체</td>`;
+  months.forEach(k=>{const d=S.accumulated[k];h+=d.overallAvg?`<td class="tot">${(+d.overallAvg).toFixed(1)}</td>`:`<td class="tot zero">–</td>`;});
+  h+=`</tr></tbody></table></div></div>`;
+
+  // ── 그래프
+  if(months.length>=2){h+=`<div class="sec-title">📈 환산표점 평균 추이 그래프</div>`;h+=buildLineChart(months,S.accumulated);}
+
+  // ── 표2: 서울 빌보드 인원 (반별, 인문/자연)
+  h+=`<div class="sec-title">🏫 서울 빌보드 인원 (반별)</div>`;
+  h+=`<div class="card"><div class="tw"><table class="stat-t"><thead><tr><th class="lh">반</th><th class="lh">반코드</th>`;
+  months.forEach(k=>{const d=S.accumulated[k];h+=`<th colspan="2">${(d.label||mlbl(k)).replace(/\d{4}년 /,'')}</th>`;});
+  h+=`</tr><tr><th class="lh"></th><th class="lh"></th>`;months.forEach(()=>{h+=`<th>인문</th><th>자연</th>`;});h+=`</tr></thead><tbody>`;
+  BAN_LIST.forEach(ban=>{
+    h+=`<tr><td class="lh">${BAN_CODE[ban]||ban}</td><td class="lh" style="color:var(--mu);font-size:11px">${ban}</td>`;
     months.forEach(k=>{
-      (S.accumulated[k].winners||[]).filter(w=>!w.excluded).forEach(w=>{
-        if(!sm[w.이름])sm[w.이름]={이름:w.이름,반:w.반,cnt:0,months:[],detail:[]};
-        sm[w.이름].cnt++;
-        const ml=S.accumulated[k].label||k;
-        if(!sm[w.이름].months.includes(ml))sm[w.이름].months.push(ml);
-        sm[w.이름].detail.push(`${ml}:${w.lbl}`);
-      });
+      const ws=(S.accumulated[k].winners||[]).filter(w=>!w.excluded&&isBillboard(w));
+      const inH=ws.filter(w=>String(w.반)===ban&&getWinnerKye(w)==='인문').length;
+      const inN=ws.filter(w=>String(w.반)===ban&&getWinnerKye(w)==='자연').length;
+      h+=`<td class="${inH===0?'zero':''}">${inH||'–'}</td><td class="${inN===0?'zero':''}">${inN||'–'}</td>`;
+    });h+=`</tr>`;
+  });
+  h+=`<tr><td class="tot-lh">계</td><td class="tot-lh" style="font-size:11px">전체</td>`;
+  months.forEach(k=>{const ws=(S.accumulated[k].winners||[]).filter(w=>!w.excluded&&isBillboard(w));const inH=ws.filter(w=>getWinnerKye(w)==='인문').length;const inN=ws.filter(w=>getWinnerKye(w)==='자연').length;h+=`<td class="tot">${inH}</td><td class="tot">${inN}</td>`;});
+  h+=`</tr></tbody></table></div></div>`;
+
+  // ── 표3: 장학 종류별 인원
+  h+=`<div class="sec-title">🏆 장학 종류별 수여 인원</div>`;
+  const schRows=[
+    {lbl:SCONF.manual.dasung_in.lbl,fn:ws=>ws.filter(w=>w.lbl===SCONF.manual.dasung_in.lbl).length},
+    {lbl:SCONF.manual.dasung_nat.lbl,fn:ws=>ws.filter(w=>w.lbl===SCONF.manual.dasung_nat.lbl).length},
+    {lbl:SCONF.auto.d1.lbl,fn:ws=>ws.filter(w=>w.lbl===SCONF.auto.d1.lbl).length},
+    {lbl:SCONF.auto.d2.lbl,fn:ws=>ws.filter(w=>w.lbl===SCONF.auto.d2.lbl).length},
+    {lbl:SCONF.auto.qt.lbl,fn:ws=>ws.filter(w=>w.lbl===SCONF.auto.qt.lbl).length},
+    {lbl:'각 수학반 1등',fn:ws=>ws.filter(w=>w.lbl.startsWith(SCONF.auto.math.lbl)).length},
+    {lbl:SCONF.auto.mi.lbl,fn:ws=>ws.filter(w=>w.lbl===SCONF.auto.mi.lbl).length},
+    {lbl:SCONF.auto.ti.lbl,fn:ws=>ws.filter(w=>w.lbl===SCONF.auto.ti.lbl).length},
+    {lbl:SCONF.manual.improve_gift.lbl,fn:ws=>ws.filter(w=>w.lbl===SCONF.manual.improve_gift.lbl).length},
+    {lbl:SCONF.manual.honor_in.lbl,fn:ws=>ws.filter(w=>w.lbl===SCONF.manual.honor_in.lbl).length},
+    {lbl:SCONF.manual.honor_nat.lbl,fn:ws=>ws.filter(w=>w.lbl===SCONF.manual.honor_nat.lbl).length},
+  ];
+  h+=`<div class="card"><div class="tw"><table class="stat-t"><thead><tr><th class="lh">장학</th>${mhdrShort}</tr></thead><tbody>`;
+  schRows.forEach(({lbl,fn})=>{
+    h+=`<tr><td class="lh">${lbl}</td>`;
+    months.forEach(k=>{const ws=(S.accumulated[k].winners||[]).filter(w=>!w.excluded);const cnt=fn(ws);h+=`<td class="${cnt===0?'zero':''}">${cnt||'–'}</td>`;});
+    h+=`</tr>`;
+  });
+  h+=`<tr><td class="tot-lh">계</td>`;
+  months.forEach(k=>{const ws=(S.accumulated[k].winners||[]).filter(w=>!w.excluded);h+=`<td class="tot">${ws.length}</td>`;});
+  h+=`</tr></tbody></table></div></div>`;
+
+  // ── 학생별 수상이력
+  h+=`<div class="sec-title">📋 학생별 수상 이력</div>`;
+  const stuMap={};
+  months.forEach(k=>{
+    (S.accumulated[k].winners||[]).filter(w=>!w.excluded).forEach(w=>{
+      const key=String(w.번호||w.이름);
+      if(!stuMap[key])stuMap[key]={반:w.반,학번:w.번호||'',이름:w.이름,months:{}};
+      const abbrev=w.혜택==='식비 100%'?'식비100%':w.혜택==='식비 50%'?'식비50%':w.혜택.includes('독서실비')?'독서실비100%':w.혜택.includes('교습비')?'교습비100%':'매점5만';
+      if(!stuMap[key].months[k])stuMap[key].months[k]=[];
+      stuMap[key].months[k].push(abbrev);
     });
-    const stus=Object.values(sm).sort((a,b)=>b.cnt-a.cnt);
-    h+=`<div class="card"><div class="tw"><table class="t"><thead><tr><th>이름</th><th>반</th><th>수상횟수</th><th>수상월</th><th>상세이력</th></tr></thead><tbody>`;
-    stus.forEach(s=>{
-      h+=`<tr><td class="nm">${s.이름}</td><td>${s.반}반</td><td style="color:var(--gold2);font-weight:700">${s.cnt}회</td><td style="font-size:11px">${s.months.join(', ')}</td><td style="font-size:11px;color:var(--mu)">${s.detail.join(' / ')}</td></tr>`;
+  });
+  const stus=Object.values(stuMap).sort((a,b)=>{const da=Number(a.반)||99,db=Number(b.반)||99;return da!==db?da-db:Number(a.학번)-Number(b.학번);});
+  if(!stus.length){h+=`<div class="notice">저장된 수상 이력이 없습니다.</div>`;}
+  else{
+    const bc=v=>v.includes('교습비')||v.includes('식비')?'color:var(--red);font-weight:600':v.includes('독서실비')?'color:var(--blue);font-weight:600':'color:var(--amber)';
+    h+=`<div class="card"><div class="tw"><table class="stat-t"><thead><tr><th>No</th><th>반</th><th>학번</th><th class="lh">이름</th>${months.map(k=>`<th>${(S.accumulated[k].label||mlbl(k)).replace(/\d{4}년 /,'')}</th>`).join('')}</tr></thead><tbody>`;
+    stus.forEach((s,idx)=>{
+      h+=`<tr><td style="color:var(--mu);font-size:11px">${idx+1}</td><td>${s.반?s.반+'반':''}</td><td class="nn">${s.학번||'–'}</td><td class="lh nm">${s.이름}</td>`;
+      months.forEach(k=>{const vals=s.months[k]||[];h+=vals.length?`<td style="font-size:10px">${vals.map(v=>`<div style="${bc(v)}">${v}</div>`).join('')}</td>`:`<td class="zero"></td>`;});
+      h+=`</tr>`;
     });
     h+=`</tbody></table></div></div>`;
-  } else {
-    h+=`<div class="notice" style="margin-top:12px">최종 명단 탭에서 "이번달 저장"을 하면 누적 데이터가 쌓입니다.</div>`;
   }
   return h;
 }
 
-// ── Slot binding ─────────────────────────────────
+function pgSettings(){
+  let h=`<div class="ph"><h2>장학 설정</h2><p>장학 이름과 혜택을 수정하면 모든 탭에 즉시 반영 · Firestore에 저장하면 영구 적용</p></div>`;
+  h+=`<div class="btn-row"><button class="btn btn-g" onclick="saveSettings().then(()=>render())">☁ 설정 저장 (Firestore)</button><span style="font-size:11px;color:var(--mu)">저장 후 새로고침해도 유지됩니다</span></div>`;
+  h+=`<div class="sec-title">자동 산출 장학 (이름과 혜택만 수정 가능)</div>`;
+  h+=`<div class="card"><div style="padding:12px 14px">`;
+  h+=`<div style="display:grid;grid-template-columns:100px 1fr 1fr 1fr;gap:8px;font-size:10px;color:var(--mu);padding:4px 0;border-bottom:1px solid var(--bo);margin-bottom:4px"><span>구분</span><span>장학 이름</span><span>혜택</span><span>기준 (참고용)</span></div>`;
+  Object.entries(SCONF.auto).forEach(([id,c])=>{
+    h+=`<div style="display:grid;grid-template-columns:100px 1fr 1fr 1fr;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--bo2)">
+      <span style="font-size:11px;color:var(--mu)">${id}</span>
+      <input class="fi" value="${c.lbl}" oninput="SCONF.auto['${id}'].lbl=this.value">
+      <input class="fi" value="${c.혜택}" oninput="SCONF.auto['${id}'].혜택=this.value">
+      <input class="fi" value="${c.기준||''}" oninput="SCONF.auto['${id}'].기준=this.value" placeholder="기준 입력...">
+    </div>`;
+  });
+  h+=`</div></div>`;
+  h+=`<div class="sec-title">수기 입력 장학</div>`;
+  h+=`<div class="card"><div style="padding:12px 14px">`;
+  h+=`<div style="display:grid;grid-template-columns:120px 1fr 1fr 80px;gap:8px;font-size:10px;color:var(--mu);padding:4px 0;border-bottom:1px solid var(--bo);margin-bottom:4px"><span>구분</span><span>장학 이름</span><span>혜택</span><span>드롭다운</span></div>`;
+  Object.entries(SCONF.manual).forEach(([id,c])=>{
+    const isActive=ACTIVE_MANUAL.includes(id);
+    h+=`<div style="display:grid;grid-template-columns:120px 1fr 1fr 80px;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--bo2)">
+      <span style="font-size:10px;color:var(--mu)">${id}</span>
+      <input class="fi" value="${c.lbl}" oninput="SCONF.manual['${id}'].lbl=this.value">
+      <input class="fi" value="${c.혜택}" oninput="SCONF.manual['${id}'].혜택=this.value">
+      <span style="font-size:11px;${isActive?'color:var(--green);font-weight:500':'color:var(--mu)'}">${isActive?'✓ 표시':''}</span>
+    </div>`;
+  });
+  h+=`</div></div>`;
+  return h;
+}
+
+function buildLineChart(months,acc){
+  const W=580,H=220,PL=50,PR=65,PT=20,PB=46;
+  const iW=W-PL-PR,iH=H-PT-PB;const n=months.length;
+  const ovAvgs=months.map(k=>+(acc[k].overallAvg||0));
+  const banSet=new Set();
+  months.forEach(k=>(acc[k].classStats||[]).forEach(s=>banSet.add(String(s.반))));
+  const bans=[...banSet].sort((a,b)=>a-b);
+  const banData={};
+  bans.forEach(b=>{banData[b]=months.map(k=>{const s=(acc[k].classStats||[]).find(x=>String(x.반)===b);return s?+s.환산:null;});});
+  let allVals=[...ovAvgs.filter(v=>v>0)];
+  bans.forEach(b=>allVals.push(...banData[b].filter(v=>v!==null)));
+  if(!allVals.length)return'';
+  const mn=Math.min(...allVals),mx=Math.max(...allVals);
+  const pad=(mx-mn)*0.12||5;const lo=mn-pad,hi=mx+pad;
+  const xp=i=>PL+i*(iW/Math.max(n-1,1));const yp=v=>PT+iH-(((v-lo)/(hi-lo))*iH);
+  const COLORS=['#1a5fa0','#1e7a45','#a06010','#c0362a','#7b5fa0','#1a9090','#a05080','#608040'];
+  let svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:${W}px;display:block;margin:0 auto;overflow:visible">`;
+  for(let i=0;i<=4;i++){const y=PT+iH*(i/4);const v=(hi-lo)*(1-i/4)+lo;svg+=`<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="var(--bo2)" stroke-width="1"/><text x="${PL-4}" y="${y+4}" text-anchor="end" font-size="9" fill="var(--mu)">${v.toFixed(0)}</text>`;}
+  months.forEach((k,i)=>{
+    const d=acc[k];const line1=(d.label||mlbl(k)).replace(/\d{4}년 /,'');const line2=d.시험종류||'';
+    svg+=`<text x="${xp(i)}" y="${H-PB+14}" text-anchor="middle" font-size="9" fill="var(--mu)">${line1}</text>`;
+    if(line2)svg+=`<text x="${xp(i)}" y="${H-PB+24}" text-anchor="middle" font-size="8" fill="var(--mu2)">(${line2})</text>`;
+    svg+=`<line x1="${xp(i)}" y1="${PT}" x2="${xp(i)}" y2="${H-PB}" stroke="var(--bo2)" stroke-width="1"/>`;
+  });
+  bans.forEach((b,ci)=>{
+    const pts=banData[b];const col=COLORS[ci%COLORS.length];let path='';
+    pts.forEach((v,i)=>{if(v===null)return;if(!path)path=`M${xp(i)},${yp(v)}`;else path+=`L${xp(i)},${yp(v)}`;});
+    if(path)svg+=`<path d="${path}" fill="none" stroke="${col}" stroke-width="1.5" stroke-dasharray="4 2" opacity=".7"/>`;
+    let lastIdx=-1;
+    pts.forEach((v,i)=>{if(v!==null){svg+=`<circle cx="${xp(i)}" cy="${yp(v)}" r="3" fill="${col}" opacity=".8"><title>${acc[months[i]].label||months[i]} ${b}반: ${v.toFixed(1)}</title></circle>`;lastIdx=i;}});
+    if(lastIdx>=0&&banData[b][lastIdx]!==null)svg+=`<text x="${xp(lastIdx)+9}" y="${yp(banData[b][lastIdx])+4}" font-size="9" fill="${col}" font-weight="600">${BAN_CODE[b]||b}</text>`;
+  });
+  let oPath='';ovAvgs.forEach((v,i)=>{if(v>0)oPath+=(!oPath?`M${xp(i)},${yp(v)}`:`L${xp(i)},${yp(v)}`);});
+  if(oPath)svg+=`<path d="${oPath}" fill="none" stroke="var(--gold)" stroke-width="2.5"/>`;
+  ovAvgs.forEach((v,i)=>{if(!v)return;svg+=`<circle cx="${xp(i)}" cy="${yp(v)}" r="4" fill="var(--gold)"><title>${acc[months[i]].label||months[i]} 전체: ${v.toFixed(1)}</title></circle><text x="${xp(i)}" y="${yp(v)-8}" text-anchor="middle" font-size="9" fill="var(--gold2)" font-weight="700">${v.toFixed(1)}</text>`;});
+  svg+=`</svg>`;
+  let legend=`<div style="display:flex;flex-wrap:wrap;gap:5px 12px;padding:6px 10px 10px;font-size:11px"><span style="color:var(--gold);font-weight:700">● 전체평균</span>`;
+  bans.forEach((b,ci)=>{legend+=`<span style="color:${COLORS[ci%COLORS.length]};opacity:.85">-- ${BAN_CODE[b]||b}반(${b})</span>`;});
+  legend+=`</div>`;
+  return`<div class="card" style="margin-bottom:12px"><div style="padding:12px 8px 0">${svg}</div>${legend}</div>`;
+}
+
 function ubH(id,lbl,sub){
   const file=id==='cur'?S.curFile:id==='prev'?S.prevFile:S.exFile;
   return`<div class="ub${file?' done':''}" id="ub-${id}"><div class="lbl">${lbl}</div><div class="sub">${sub}</div>${file?`<div class="fn">✓ ${file}</div><div class="rst" onclick="event.stopPropagation();resetF('${id}')">변경</div>`:`<div class="sub" style="margin-top:5px">클릭 또는 드래그</div>`}</div>`;
@@ -981,13 +776,9 @@ function handleFile(id,file){
     try{
       const buf=new Uint8Array(ev.target.result);
       if(id==='ex'){S.exMap=parseExisting(buf);S.exFile=file.name;S.err=null;render();return;}
-      const st=parseScores(buf);
-      if(!st.length)throw new Error('학생 데이터를 찾을 수 없습니다.');
-      if(id==='cur'){S.curStudents=st;S.curFile=file.name;}
-      else{S.prevStudents=st;S.prevFile=file.name;}
-      S.err=null;
-      if(S.curStudents)S.results=calcResults();
-      render();
+      const st=parseScores(buf);if(!st.length)throw new Error('학생 데이터를 찾을 수 없습니다.');
+      if(id==='cur'){S.curStudents=st;S.curFile=file.name;}else{S.prevStudents=st;S.prevFile=file.name;}
+      S.err=null;if(S.curStudents)S.results=calcResults();render();
     }catch(e){S.err=e.message;render();}
   };
   rd.readAsArrayBuffer(file);
@@ -1001,10 +792,8 @@ function bindSlots(){
     el.ondrop=e=>{e.preventDefault();el.classList.remove('drag');if(e.dataTransfer.files[0])handleFile(id,e.dataTransfer.files[0]);};
   });
 }
-['cur','prev','ex'].forEach(id=>{
-  const el=document.getElementById(`fi-${id}`);
-  if(el)el.onchange=()=>{if(el.files[0]){handleFile(id,el.files[0]);el.value='';}};
-});
+['cur','prev','ex'].forEach(id=>{const el=document.getElementById(`fi-${id}`);if(el)el.onchange=()=>{if(el.files[0]){handleFile(id,el.files[0]);el.value='';}}; });
+initManual();
 </script>
 </body>
 </html>

@@ -247,17 +247,7 @@ function restoreCurrentMonthFromSaved(){
       S.exMap={...d.exMap};
       if(!S.exFile)S.exFile=d.exFile||'(저장본 복원)';
     }
-    // 이전달 데이터도 자동 복원 (향상 장학 계산용)
-    const months=Object.keys(S.accumulated).sort();
-    const idx=months.indexOf(mk);
-    if(idx>0){
-      const prevMk=months[idx-1];
-      const prevD=S.accumulated[prevMk];
-      if(prevD?.allStudents?.length){
-        S.prevStudents=prevD.allStudents;
-        if(!S.prevFile)S.prevFile=`(${prevD.label||mlbl(prevMk)} 저장본)`;
-      }
-    }
+    // 이전달 데이터는 자동 복원 안 함 — 향상장학 계산만 calcResults 내부 fallback으로 처리
     S.results=calcResults();
   }
 }
@@ -396,7 +386,23 @@ function parseExisting(buf){
   return map;
 }
 function calcResults(){
-  const cur=S.curStudents,prev=S.prevStudents;const res={};
+  const cur=S.curStudents;
+  // 사용자가 명시적으로 이전달 성적 파일을 올렸으면 그걸 쓰고, 없으면 직전 월의 Firestore 저장본을 fallback 으로 사용
+  let prev=S.prevStudents;let prevFallback='';
+  if(!prev?.length){
+    const mk=mkey();
+    const months=Object.keys(S.accumulated).sort();
+    const idx=months.indexOf(mk);
+    if(idx>0){
+      const prevMk=months[idx-1];
+      const prevD=S.accumulated[prevMk];
+      if(prevD?.allStudents?.length){
+        prev=prevD.allStudents;
+        prevFallback=`(${prevD.label||mlbl(prevMk)} 저장본 자동 사용)`;
+      }
+    }
+  }
+  const res={};
   const bh=[...cur].sort((a,b)=>b.환산-a.환산||b.수학표준-a.수학표준||b.국어표준-a.국어표준);
   res.d1=bh[0]||null;res.d2=bh[1]||null;res.qt=bh[2]||null;res.math={};
   [...new Set(cur.map(s=>s.반))].filter(b=>b>0).sort((a,b)=>a-b).forEach(ban=>{
@@ -411,7 +417,7 @@ function calcResults(){
     if(mi.length)res.mi=mi[0];
     const ti=bm.filter(s=>{const p=pm[s.번호];return p.국어백분>0&&p.수학백분>0&&p.탐1백분>0&&p.탐2백분>0;}).map(s=>({...s,향상:s.백분위합-pm[s.번호].백분위합,이전합:pm[s.번호].백분위합})).filter(s=>s.향상>0).sort((a,b)=>b.향상-a.향상||b.수학표준-a.수학표준||b.국어표준-a.국어표준);
     if(ti.length)res.ti=ti[0];
-    S.dbg+=`\n향상: 양달응시${bm.length}명 / 수학후보${mi.length} / 총합후보${ti.length}`;
+    S.dbg+=`\n향상${prevFallback?' '+prevFallback:''}: 양달응시${bm.length}명 / 수학후보${mi.length} / 총합후보${ti.length}`;
     if(res.mi)S.dbg+=`\n수학향상1위: ${res.mi.이름}(${res.mi.반}반) ${res.mi.이전수학}→${res.mi.수학백분}(+${res.mi.향상})`;
     if(res.ti)S.dbg+=`\n총합향상1위: ${res.ti.이름}(${res.ti.반}반) ${res.ti.이전합}→${res.ti.백분위합}(+${res.ti.향상})`;
   }
@@ -694,7 +700,11 @@ function pgResults(){
   const mc=SCONF.auto.math;
   const mr=Object.entries(r?.math||{}).map(([ban,s])=>`<tr><td><b>${ban}반</b></td><td class="nn">${s.번호}</td><td class="nm">${s.이름}</td><td>${s.계열}</td><td class="nn rk1">${s.환산.toFixed(1)}</td><td class="dim">${s.국어표준}+${s.수학표준}+${s.탐1표준}+${s.탐2표준}</td><td class="neg">${s.영어등급}등급(-${ENG_D[s.영어등급]??14})</td>${ev(s)}</tr>`);
   h+=`<div class="card"><div class="ch"><span class="bx ${mc.bc}">${mc.혜택}</span><span class="ct">${mc.lbl}</span><span class="cs">${mr.length}개 반</span></div>${mr.length?`<div class="tw"><table class="t"><thead><tr><th>반</th><th>번호</th><th>이름</th><th>계열</th><th>환산표점</th><th>구성</th><th>영어감점</th>${ec}</tr></thead><tbody>${mr.join('')}</tbody></table></div>`:`<div class="empty">데이터 없음</div>`}</div>`;
-  if(!S.prevStudents){h+=`<div class="notice">이전달 성적 파일을 업로드하면 향상 장학이 자동 산출됩니다.</div>`;}
+  // 향상장학: 사용자가 이전달 파일을 안 올렸어도 직전 월 저장본이 있으면 자동 계산됨
+  const months_=Object.keys(S.accumulated).sort();
+  const idx_=months_.indexOf(mkey());
+  const hasPrev=S.prevStudents?.length||(idx_>0&&S.accumulated[months_[idx_-1]]?.allStudents?.length);
+  if(!hasPrev){h+=`<div class="notice">이전달 데이터가 없어 향상장학을 산출할 수 없습니다. 이전달 성적 파일을 업로드하거나, 직전 월을 먼저 저장해주세요.</div>`;}
   else{
     [{key:'mi',c:SCONF.auto.mi,eh:['수학백분 향상','이번달','이전달'],ef:s=>[`<span class="iv">+${s.향상}</span>`,s.수학백분,s.이전수학]},
      {key:'ti',c:SCONF.auto.ti,eh:['총합 향상','이번달 합','이전달 합'],ef:s=>[`<span class="iv">+${s.향상}</span>`,s.백분위합,s.이전합]}]

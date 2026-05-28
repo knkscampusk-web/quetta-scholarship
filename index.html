@@ -242,6 +242,11 @@ function restoreCurrentMonthFromSaved(){
     S.curStudents=d.allStudents;
     if(!S.curFile)S.curFile='(저장본 복원)';
     S.monthConfirmed=true;
+    // 기존장학 매핑 복원
+    if(d.exMap&&Object.keys(d.exMap).length){
+      S.exMap={...d.exMap};
+      if(!S.exFile)S.exFile=d.exFile||'(저장본 복원)';
+    }
     // 이전달 데이터도 자동 복원 (향상 장학 계산용)
     const months=Object.keys(S.accumulated).sort();
     const idx=months.indexOf(mk);
@@ -293,7 +298,7 @@ async function saveAutoResults(){
   if(!S.curStudents){alert('성적 파일을 먼저 업로드하세요.');return;}
   setSyncMsg('저장 중...');
   try{
-    const data={label:`${S.curYear}년 ${S.curMonth}월`,시험종류:S.시험종류,classStats:calcClassStats(),overallAvg:overallAvg(),allStudents:S.curStudents,savedAt:new Date().toISOString()};
+    const data={label:`${S.curYear}년 ${S.curMonth}월`,시험종류:S.시험종류,classStats:calcClassStats(),overallAvg:overallAvg(),allStudents:S.curStudents,exMap:S.exMap||{},exFile:S.exFile||'',savedAt:new Date().toISOString()};
     await db.collection('quetta_data').doc(mk).set(data,{merge:true});
     S.accumulated[mk]={...S.accumulated[mk],...data};S.allStudentsData[mk]=S.curStudents;
     setSyncMsg('✓ 자동산출 저장 완료');render();
@@ -308,6 +313,7 @@ async function saveToFirestore(){
       classStats:calcClassStats(),overallAvg:overallAvg(),
       manual:S.manual,excluded:[...S.excluded],remarks:S.remarks,
       allStudents:S.curStudents||S.allStudentsData[mk]||null,
+      exMap:S.exMap||{},exFile:S.exFile||'',
       savedAt:new Date().toISOString(),
     };
     await db.collection('quetta_data').doc(mk).set(data);
@@ -338,6 +344,7 @@ async function loadMonthData(){
   S.excluded=new Set();S.remarks={};S.monthConfirmed=false;S.finalViewMonth=null;
   // 작업 상태 초기화 (월이 바뀌었으니 현재 메모리의 학생 명단 비움)
   S.curStudents=null;S.prevStudents=null;S.curFile=null;S.prevFile=null;S.results=null;
+  S.exMap={};S.exFile=null;
   if(S.accumulated[mk]){
     const d=S.accumulated[mk];
     if(d.manual)Object.keys(SCONF.manual).forEach(id=>{if(d.manual[id])S.manual[id]=d.manual[id];});
@@ -345,7 +352,7 @@ async function loadMonthData(){
     if(d.remarks)S.remarks=d.remarks;
     if(d.시험종류)S.시험종류=d.시험종류;
   }
-  // 새 월의 저장본 자동 복원
+  // 새 월의 저장본 자동 복원 (exMap 포함)
   restoreCurrentMonthFromSaved();
   render();
 }

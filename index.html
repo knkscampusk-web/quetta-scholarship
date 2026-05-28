@@ -119,6 +119,24 @@ input[type=checkbox]{cursor:pointer;accent-color:var(--gold);width:13px;height:1
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--bo);border-radius:3px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;align-items:start}
+.stat-grid > .card{margin-bottom:0}
+@media(max-width:1100px){.stat-grid{grid-template-columns:1fr}}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.42);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;animation:fadeIn .12s}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-box{background:var(--bg2);border-radius:10px;max-width:720px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--bo);box-shadow:0 8px 32px rgba(0,0,0,.18)}
+.modal-head{padding:11px 16px;border-bottom:1px solid var(--bo);display:flex;align-items:center;justify-content:space-between;background:var(--bg3);gap:10px}
+.modal-head .t{font-size:13px;font-weight:600;color:var(--w);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.modal-x{background:transparent;border:none;font-size:18px;cursor:pointer;color:var(--mu);padding:2px 8px;line-height:1;font-family:inherit}
+.modal-x:hover{color:var(--w)}
+.modal-body{padding:14px 16px;overflow-y:auto;flex:1;font-size:12px}
+.clickable{cursor:pointer;transition:background .12s}
+.clickable:hover{background:rgba(181,104,30,.08)}
+.name-link{cursor:pointer;border-bottom:1px dashed rgba(181,104,30,.4);transition:color .12s}
+.name-link:hover{color:var(--gold2)}
+.sort-h{cursor:pointer;user-select:none}
+.sort-h:hover{background:var(--bg4)}
+.sort-h .arr{color:var(--amber);font-size:10px;margin-left:2px}
 </style>
 </head>
 <body>
@@ -293,13 +311,16 @@ function parseScores(buf){
   for(let i=ds;i<raw.length;i++){
     const r=raw[i];const 이름=String(r[COL.이름]||'').trim();if(!이름)continue;
     const 번호=toN(r[COL.번호]);if(!번호)continue;
-    const eng=Math.round(toN(r[COL.영어등급]))||9;const d2=ENG_D[eng]??14;
+    const rawEng=r[COL.영어등급];
+    const engStr=String(rawEng==null?'':rawEng).trim();
+    const 영어결시=engStr===''||toN(engStr)===0;
+    const eng=Math.round(toN(engStr))||9;const d2=ENG_D[eng]??14;
     const 국어표준=toN(r[COL.국어표준]),수학표준=toN(r[COL.수학표준]);
     const 탐1표준=toN(r[COL.탐1표준]),탐2표준=toN(r[COL.탐2표준]);
     arr.push({
       반:Number(r[COL.반])||0,번호,이름,계열:String(r[COL.계열]||'').trim(),
       국어표준,국어백분:toN(r[COL.국어백분]),수학표준,수학백분:toN(r[COL.수학백분]),
-      영어등급:eng,탐1표준,탐1백분:toN(r[COL.탐1백분]),탐2표준,탐2백분:toN(r[COL.탐2백분]),
+      영어등급:eng,영어결시,탐1표준,탐1백분:toN(r[COL.탐1백분]),탐2표준,탐2백분:toN(r[COL.탐2백분]),
       환산:국어표준+수학표준+탐1표준+탐2표준-d2,
       백분위합:toN(r[COL.국어백분])+toN(r[COL.수학백분])+toN(r[COL.탐1백분])+toN(r[COL.탐2백분]),
     });
@@ -336,14 +357,29 @@ function calcResults(){
   }
   return res;
 }
-function calcClassStats(){
-  if(!S.curStudents?.length)return[];
-  return[...new Set(S.curStudents.map(s=>s.반))].filter(b=>b>0).sort((a,b)=>a-b).map(ban=>{
-    const g=S.curStudents.filter(s=>s.반===ban);const avg=f=>g.reduce((s,v)=>s+v[f],0)/g.length;
+function isFullScore(s){
+  return s.국어표준>0 && s.수학표준>0 && s.탐1표준>0 && s.탐2표준>0 && !s.영어결시;
+}
+function calcStatsFromStudents(students){
+  if(!students?.length)return{classStats:[],overallAvg:0,validCount:0,totalCount:0};
+  const valid=students.filter(isFullScore);
+  if(!valid.length)return{classStats:[],overallAvg:0,validCount:0,totalCount:students.length};
+  const classStats=[...new Set(valid.map(s=>s.반))].filter(b=>b>0).sort((a,b)=>a-b).map(ban=>{
+    const g=valid.filter(s=>s.반===ban);const avg=f=>g.reduce((s,v)=>s+v[f],0)/g.length;
     return{반:ban,인원:g.length,환산:avg('환산'),국어:avg('국어표준'),수학:avg('수학표준'),탐1:avg('탐1표준'),탐2:avg('탐2표준')};
   });
+  const overallAvg=valid.reduce((s,v)=>s+v.환산,0)/valid.length;
+  return{classStats,overallAvg,validCount:valid.length,totalCount:students.length};
 }
-function overallAvg(){if(!S.curStudents?.length)return 0;return S.curStudents.reduce((s,v)=>s+v.환산,0)/S.curStudents.length;}
+function calcClassStats(){return calcStatsFromStudents(S.curStudents).classStats;}
+function overallAvg(){return calcStatsFromStudents(S.curStudents).overallAvg;}
+// 저장된 월의 통계: allStudents 있으면 재계산, 없으면 저장값 fallback
+function getMonthStats(mk){
+  const d=S.accumulated[mk];if(!d)return{classStats:[],overallAvg:0};
+  const stus=S.allStudentsData[mk]||d.allStudents;
+  if(stus&&stus.length){const r=calcStatsFromStudents(stus);return{classStats:r.classStats,overallAvg:r.overallAvg,recalc:true};}
+  return{classStats:d.classStats||[],overallAvg:d.overallAvg||0,recalc:false};
+}
 function getAllWinners(){
   const ws=[];const r=S.results;const ac=SCONF.auto;
   const addA=(key,s,val)=>{const c=ac[key];if(!s||!c)return;ws.push({lbl:c.lbl,bc:c.bc,혜택:c.혜택,반:s.반,번호:s.번호,이름:s.이름,계열:s.계열,val,type:'auto',기존장학:S.exMap[String(s.번호)]||'',dup:[]});};
@@ -415,6 +451,114 @@ function delManualStudent(schId,ri){S.manual[schId].splice(ri,1);autoSaveManual(
 function updManualNote(schId,ri,val){if(S.manual[schId]?.[ri])S.manual[schId][ri].비고=val;autoSaveManual();}
 function toggleExcl(idx){const k=wkey(_ws[idx]);if(S.excluded.has(k))S.excluded.delete(k);else S.excluded.add(k);autoSaveManual();render();}
 function updRemark(idx,val){const k=wkey(_ws[idx]);S.remarks[k]=val;autoSaveManual();}
+
+// ───── 모달 시스템 ─────
+function showModal(title,bodyHtml){
+  let el=document.getElementById('modal-root');
+  if(!el){el=document.createElement('div');el.id='modal-root';document.body.appendChild(el);}
+  el.innerHTML=`<div class="modal-bg" onclick="closeModal()"><div class="modal-box" onclick="event.stopPropagation()"><div class="modal-head"><div class="t">${title}</div><button class="modal-x" onclick="closeModal()">✕</button></div><div class="modal-body">${bodyHtml}</div></div></div>`;
+}
+function closeModal(){const el=document.getElementById('modal-root');if(el)el.innerHTML='';}
+window.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+
+// 학생 상세 성적 (최종명단/통계 모달용)
+function showStudentDetail(번호,이름,mk){
+  mk=mk||S.finalViewMonth||mkey();
+  const allStus=S.allStudentsData[mk]||S.accumulated[mk]?.allStudents||(mk===mkey()?S.curStudents:null)||[];
+  const stu=allStus.find(s=>String(s.번호)===String(번호));
+  if(!stu){showModal(`${이름} (${번호})`,'<div class="empty">상세 성적 데이터를 찾을 수 없습니다.<br><span class="dim">해당 월에 성적 데이터가 저장되지 않았을 수 있습니다.</span></div>');return;}
+  const d2=ENG_D[stu.영어등급]??14;
+  // 이전달 비교
+  const allMonths=Object.keys(S.accumulated).sort();const idx=allMonths.indexOf(mk);
+  const prevMk=idx>0?allMonths[idx-1]:null;
+  const prevStus=prevMk?(S.allStudentsData[prevMk]||S.accumulated[prevMk]?.allStudents||[]):[];
+  const prev=prevStus.find(s=>String(s.번호)===String(번호));
+  const dlt=(c,p)=>{if(!prev||p<=0)return'<span class="dim">–</span>';const d=c-p;if(d===0)return'<span class="dim">±0</span>';return d>0?`<span class="iv">+${d}</span>`:`<span class="neg">${d}</span>`;};
+  let html=`<div style="display:grid;grid-template-columns:90px 1fr;gap:5px 12px;font-size:12px;margin-bottom:12px">`;
+  html+=`<div class="dim">반</div><div>${stu.반}반 <span class="dim">(${BAN_CODE[String(stu.반)]||'–'})</span></div>`;
+  html+=`<div class="dim">학번</div><div class="nn">${stu.번호}</div>`;
+  html+=`<div class="dim">이름</div><div class="nm">${stu.이름}</div>`;
+  html+=`<div class="dim">계열</div><div>${stu.계열||'–'}</div>`;
+  html+=`<div class="dim">환산표점</div><div><span class="rk1">${stu.환산.toFixed(1)}</span></div>`;
+  html+=`<div class="dim">백분위합</div><div><span class="rk1">${stu.백분위합}</span> ${dlt(stu.백분위합,prev?.백분위합||0)}</div>`;
+  html+=`<div class="dim">영어</div><div>${stu.영어등급}등급 <span class="neg">(감점 -${d2})</span>${stu.영어결시?' <span class="bx" style="background:rgba(192,54,42,.12);color:var(--red)">결시</span>':''}</div>`;
+  html+=`</div>`;
+  html+=`<div class="tw"><table class="t" style="font-size:12px"><thead><tr><th>과목</th><th class="num">표준점수</th><th class="num">백분위</th><th class="num">백분위 변화</th></tr></thead><tbody>`;
+  html+=`<tr><td>국어</td><td class="num">${stu.국어표준}</td><td class="num">${stu.국어백분}</td><td class="num">${dlt(stu.국어백분,prev?.국어백분||0)}</td></tr>`;
+  html+=`<tr><td>수학</td><td class="num">${stu.수학표준}</td><td class="num">${stu.수학백분}</td><td class="num">${dlt(stu.수학백분,prev?.수학백분||0)}</td></tr>`;
+  html+=`<tr><td>탐구1</td><td class="num">${stu.탐1표준}</td><td class="num">${stu.탐1백분}</td><td class="num">${dlt(stu.탐1백분,prev?.탐1백분||0)}</td></tr>`;
+  html+=`<tr><td>탐구2</td><td class="num">${stu.탐2표준}</td><td class="num">${stu.탐2백분}</td><td class="num">${dlt(stu.탐2백분,prev?.탐2백분||0)}</td></tr>`;
+  html+=`</tbody></table></div>`;
+  // 해당 학생의 기존장학 / 수상 정보
+  const ex_=mk===mkey()?S.exMap[String(번호)]:'';
+  const monthWinners=(S.accumulated[mk]?.winners||[]).filter(w=>String(w.번호)===String(번호)&&!w.excluded);
+  if(ex_||monthWinners.length){
+    html+=`<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bo2)">`;
+    if(ex_)html+=`<div style="font-size:11px;color:var(--mu);margin-bottom:4px">기존 장학</div><div style="margin-bottom:8px"><span class="bx bq">${ex_}</span></div>`;
+    if(monthWinners.length){
+      html+=`<div style="font-size:11px;color:var(--mu);margin-bottom:4px">${fullLbl(mk)} 수상</div><div style="display:flex;gap:4px;flex-wrap:wrap">`;
+      monthWinners.forEach(w=>{html+=`<span class="bx ${w.bc}">${w.lbl}</span>`;});
+      html+=`</div>`;
+    }
+    html+=`</div>`;
+  }
+  showModal(`${stu.이름} · 전체 성적 (${fullLbl(mk)})`,html);
+}
+
+// 통계 셀 클릭: 빌보드 (월×반×계열)
+function showBillboardCell(mk,ban,kye){
+  const ws=(S.accumulated[mk]?.winners||[]).filter(w=>!w.excluded&&isBillboard(w)&&String(w.반)===ban&&getWinnerKye(w)===kye);
+  const allStus=S.allStudentsData[mk]||S.accumulated[mk]?.allStudents||[];
+  if(!ws.length){showModal(`${fullLbl(mk)} · ${BAN_CODE[ban]||ban}반 ${kye}`,'<div class="empty">해당 학생 없음</div>');return;}
+  let html=`<div class="tw"><table class="t"><thead><tr><th>장학명</th><th>학번</th><th>이름</th><th class="num">환산</th><th>비고</th></tr></thead><tbody>`;
+  ws.forEach(w=>{
+    const stu=allStus.find(s=>String(s.번호)===String(w.번호));
+    const hwan=stu?stu.환산.toFixed(1):(w.val||'–');
+    html+=`<tr class="clickable" onclick="closeModal();setTimeout(()=>showStudentDetail('${w.번호}','${w.이름}','${mk}'),50)"><td><span class="bx ${w.bc}">${w.lbl}</span></td><td class="nn">${w.번호||'–'}</td><td class="nm name-link">${w.이름}</td><td class="num">${hwan}</td><td style="font-size:11px;color:var(--mu)">${w.비고||''}</td></tr>`;
+  });
+  html+=`</tbody></table></div><div class="dim" style="margin-top:8px;font-size:11px">학생 행을 클릭하면 상세 성적을 볼 수 있습니다.</div>`;
+  showModal(`${fullLbl(mk)} · ${BAN_CODE[ban]||ban}반(${ban}) ${kye} · ${ws.length}명`,html);
+}
+
+// 통계 셀 클릭: 장학 종류별
+function getSchTypeRows(){
+  return[
+    {key:'dasung_in',lbl:SCONF.manual.dasung_in.lbl,match:w=>w.lbl===SCONF.manual.dasung_in.lbl},
+    {key:'dasung_nat',lbl:SCONF.manual.dasung_nat.lbl,match:w=>w.lbl===SCONF.manual.dasung_nat.lbl},
+    {key:'d1',lbl:SCONF.auto.d1.lbl,match:w=>w.lbl===SCONF.auto.d1.lbl},
+    {key:'d2',lbl:SCONF.auto.d2.lbl,match:w=>w.lbl===SCONF.auto.d2.lbl},
+    {key:'qt',lbl:SCONF.auto.qt.lbl,match:w=>w.lbl===SCONF.auto.qt.lbl},
+    {key:'math',lbl:'각 수학반 1등',match:w=>w.lbl.startsWith(SCONF.auto.math.lbl)},
+    {key:'mi',lbl:SCONF.auto.mi.lbl,match:w=>w.lbl===SCONF.auto.mi.lbl},
+    {key:'ti',lbl:SCONF.auto.ti.lbl,match:w=>w.lbl===SCONF.auto.ti.lbl},
+    {key:'improve',lbl:SCONF.manual.improve_gift.lbl,match:w=>w.lbl===SCONF.manual.improve_gift.lbl},
+    {key:'honor_in',lbl:SCONF.manual.honor_in.lbl,match:w=>w.lbl===SCONF.manual.honor_in.lbl},
+    {key:'honor_nat',lbl:SCONF.manual.honor_nat.lbl,match:w=>w.lbl===SCONF.manual.honor_nat.lbl},
+  ];
+}
+function showSchTypeCell(mk,schKey){
+  const row=getSchTypeRows().find(r=>r.key===schKey);if(!row)return;
+  const ws=(S.accumulated[mk]?.winners||[]).filter(w=>!w.excluded&&row.match(w));
+  const allStus=S.allStudentsData[mk]||S.accumulated[mk]?.allStudents||[];
+  if(!ws.length){showModal(`${fullLbl(mk)} · ${row.lbl}`,'<div class="empty">해당 학생 없음</div>');return;}
+  let html=`<div class="tw"><table class="t"><thead><tr><th>반</th><th>학번</th><th>이름</th><th>계열</th><th class="num">환산</th><th>비고</th></tr></thead><tbody>`;
+  ws.forEach(w=>{
+    const stu=allStus.find(s=>String(s.번호)===String(w.번호));
+    const hwan=stu?stu.환산.toFixed(1):(w.val||'–');
+    html+=`<tr class="clickable" onclick="closeModal();setTimeout(()=>showStudentDetail('${w.번호}','${w.이름}','${mk}'),50)"><td>${w.반?w.반+'반':'–'}</td><td class="nn">${w.번호||'–'}</td><td class="nm name-link">${w.이름}</td><td>${getWinnerKye(w)||'–'}</td><td class="num">${hwan}</td><td style="font-size:11px;color:var(--mu)">${w.비고||''}</td></tr>`;
+  });
+  html+=`</tbody></table></div><div class="dim" style="margin-top:8px;font-size:11px">학생 행을 클릭하면 상세 성적을 볼 수 있습니다.</div>`;
+  showModal(`${fullLbl(mk)} · ${row.lbl} · ${ws.length}명`,html);
+}
+
+// 학생별 수상이력 정렬 상태
+let _stuSort={col:'lastMonth',dir:'desc'};
+function toggleStuSort(col){
+  if(_stuSort.col===col)_stuSort.dir=_stuSort.dir==='asc'?'desc':'asc';
+  else{_stuSort.col=col;_stuSort.dir=(col==='lastMonth'||col.startsWith('month-'))?'desc':'asc';}
+  render();
+}
+
 function render(){
   renderSB();const m=document.getElementById('main');if(!m)return;
   switch(S.tab){
@@ -549,7 +693,7 @@ function pgFinal(){
     h+=`<div class="notice">📁 ${fullLbl(S.finalViewMonth)} · 총 ${winners.length}건 | 최종 ${act}건</div>`;
     if(!winners.length)return h+`<div class="empty">저장된 장학생이 없습니다.</div>`;
     h+=`<div class="card"><div class="tw"><table class="t"><thead><tr><th>상태</th><th>장학명</th><th>혜택</th><th>반</th><th>번호</th><th>이름</th><th>계열</th><th>환산/향상</th><th>기존장학</th><th>비고</th></tr></thead><tbody>`;
-    winners.forEach(w=>{const ex=w.excluded;const _exg=w.기존장학||'';const exg=_exg?`<span class="bx bq">${_exg}</span>`:'–';h+=`<tr class="${ex?'ex':''}"><td style="color:${ex?'var(--red)':'var(--green)'};font-size:11px">${ex?'제외':'✓'}</td><td><span class="bx ${w.bc}">${w.lbl}</span></td><td style="font-size:11px;color:var(--mu)">${w.혜택}</td><td>${w.반?w.반+'반':''}</td><td class="nn">${w.번호||'–'}</td><td class="nm">${w.이름}</td><td>${w.계열||'–'}</td><td class="nn">${w.val}</td><td>${exg}</td><td style="font-size:11px;color:var(--mu)">${w.비고||''}</td></tr>`;});
+    winners.forEach(w=>{const ex=w.excluded;const _exg=w.기존장학||'';const exg=_exg?`<span class="bx bq">${_exg}</span>`:'–';h+=`<tr class="${ex?'ex':''}"><td style="color:${ex?'var(--red)':'var(--green)'};font-size:11px">${ex?'제외':'✓'}</td><td><span class="bx ${w.bc}">${w.lbl}</span></td><td style="font-size:11px;color:var(--mu)">${w.혜택}</td><td>${w.반?w.반+'반':''}</td><td class="nn">${w.번호||'–'}</td><td class="nm"><span class="name-link" onclick="showStudentDetail('${w.번호}','${w.이름}','${S.finalViewMonth}')">${w.이름}</span></td><td>${w.계열||'–'}</td><td class="nn">${w.val}</td><td>${exg}</td><td style="font-size:11px;color:var(--mu)">${w.비고||''}</td></tr>`;});
     h+=`</tbody></table></div></div>`;return h;
   }
   _ws=getAllWinners();
@@ -564,22 +708,77 @@ function pgFinal(){
     const dup=w.dup?.length?`<span class="dup">중복</span>`:'';
     const dupFull=w.dup?.length?w.dup.slice(0,1).join('')+(w.dup.length>1?'외':''):'–';
     const _exg=S.exMap[String(w.번호)]||w.기존장학||'';const exg=_exg?`<span class="bx bq">${_exg}</span>`:'–';
-    h+=`<tr class="${ex?'ex':''}"><td><input type="checkbox" ${ex?'checked':''} onchange="toggleExcl(${i})"></td><td><span class="bx ${w.bc}">${w.lbl}</span></td><td style="font-size:11px;color:var(--mu)">${w.혜택}</td><td>${w.반?w.반+'반':''}</td><td class="nn">${w.번호||'–'}</td><td class="nm">${w.이름}${dup}</td><td>${w.계열||'–'}</td><td class="nn">${w.val}</td><td>${exg}</td><td style="font-size:11px;color:${w.dup?.length?'var(--red)':'var(--mu)'}">${dupFull}</td><td><input class="fi" style="width:110px;font-size:11px" placeholder="비고..." value="${(S.remarks[k]||'').replace(/"/g,'&quot;')}" oninput="updRemark(${i},this.value)"></td></tr>`;
+    h+=`<tr class="${ex?'ex':''}"><td><input type="checkbox" ${ex?'checked':''} onchange="toggleExcl(${i})"></td><td><span class="bx ${w.bc}">${w.lbl}</span></td><td style="font-size:11px;color:var(--mu)">${w.혜택}</td><td>${w.반?w.반+'반':''}</td><td class="nn">${w.번호||'–'}</td><td class="nm"><span class="name-link" onclick="showStudentDetail('${w.번호}','${w.이름}')">${w.이름}</span>${dup}</td><td>${w.계열||'–'}</td><td class="nn">${w.val}</td><td>${exg}</td><td style="font-size:11px;color:${w.dup?.length?'var(--red)':'var(--mu)'}">${dupFull}</td><td><input class="fi" style="width:110px;font-size:11px" placeholder="비고..." value="${(S.remarks[k]||'').replace(/"/g,'&quot;')}" oninput="updRemark(${i},this.value)"></td></tr>`;
   });
   h+=`</tbody></table></div></div>`;return h;
 }
 function pgAll(){
   const months=Object.keys(S.accumulated).sort();
   const avail=months.filter(k=>S.allStudentsData[k]||S.accumulated[k]?.allStudents);
-  let h=`<div class="ph"><h2>전체 명단</h2><p>월별 전체 학생 성적 상세 조회</p></div>`;
+  let h=`<div class="ph"><h2>전체 명단</h2><p>월별 전체 학생 성적 상세 조회 <span class="dim" style="margin-left:6px">· 이름 클릭 → 상세 모달</span></p></div>`;
   const mk=S.allViewMonth||(avail.includes(mkey())?mkey():avail.slice(-1)[0]||mkey());
   h+=`<div class="btn-row"><select class="fi" onchange="S.allViewMonth=this.value||null;render()"><option value="">— 월 선택 —</option>${avail.slice().reverse().map(k=>`<option value="${k}"${k===mk?' selected':''}>${fullLbl(k)}</option>`).join('')}</select></div>`;
   const students=S.allStudentsData[mk]||S.accumulated[mk]?.allStudents||(mk===mkey()?S.curStudents:null);
   if(!students||!students.length)return h+`<div class="notice">이 월의 성적 데이터가 없습니다. 자동 산출 탭에서 성적 파일 업로드 후 "자동산출 저장"을 눌러주세요.</div>`;
-  h+=`<div class="card" style="margin-bottom:10px"><div style="padding:10px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input class="fi" id="all-q" type="text" placeholder="이름, 반, 번호 검색..." style="width:180px" oninput="filterAllTable(this.value)"><select class="fi" id="all-kye" onchange="filterAllTable(document.getElementById('all-q').value)"><option value="">계열 전체</option><option value="인문">인문</option><option value="자연">자연</option></select><span style="font-size:12px;color:var(--mu)">총 ${students.length}명</span></div></div>`;
-  h+=`<div class="card"><div class="tw"><table class="t" id="all-table"><thead><tr><th>반</th><th>코드</th><th>번호</th><th>이름</th><th>계열</th><th>영어</th><th class="num">국어표준</th><th class="num">국어백분</th><th class="num">수학표준</th><th class="num">수학백분</th><th class="num">탐1표준</th><th class="num">탐1백분</th><th class="num">탐2표준</th><th class="num">탐2백분</th><th class="num">백분위합</th><th class="num">환산표점</th></tr></thead><tbody id="all-tbody">`;
+
+  // 이전달 매칭
+  const idx=months.indexOf(mk);const prevMk=idx>0?months[idx-1]:null;
+  const prevStus=prevMk?(S.allStudentsData[prevMk]||S.accumulated[prevMk]?.allStudents||[]):[];
+  const prevMap={};prevStus.forEach(s=>{prevMap[String(s.번호)]=s;});
+  // 기존장학 매칭 (현재월=S.exMap, 과거월=winners에서 추출)
+  const exgMap={};
+  if(mk===mkey()){Object.assign(exgMap,S.exMap);}
+  (S.accumulated[mk]?.winners||[]).forEach(w=>{if(w.기존장학&&!exgMap[String(w.번호)])exgMap[String(w.번호)]=w.기존장학;});
+
+  const prevInfo=prevMk?`<span class="dim" style="font-size:11px;margin-left:8px">↑ 향상: ${fullLbl(prevMk)} 대비</span>`:'';
+  h+=`<div class="card" style="margin-bottom:10px"><div style="padding:10px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input class="fi" id="all-q" type="text" placeholder="이름, 반, 번호 검색..." style="width:180px" oninput="filterAllTable(this.value)"><select class="fi" id="all-kye" onchange="filterAllTable(document.getElementById('all-q').value)"><option value="">계열 전체</option><option value="인문">인문</option><option value="자연">자연</option></select><span style="font-size:12px;color:var(--mu)">총 ${students.length}명</span>${prevInfo}</div></div>`;
+  h+=`<div class="card"><div class="tw"><table class="t" id="all-table"><thead><tr>
+    <th>반</th><th>코드</th><th>번호</th><th>이름</th><th>계열</th>
+    <th class="num">환산표점</th><th class="num">백분위합</th>
+    <th class="num">수학백분↑</th><th class="num">백분위합↑</th>
+    <th class="num">영어감점</th>
+    <th class="num">국어표준</th><th class="num">국어백분</th>
+    <th class="num">수학표준</th><th class="num">수학백분</th>
+    <th class="num">영어등급</th>
+    <th class="num">탐1표준</th><th class="num">탐1백분</th>
+    <th class="num">탐2표준</th><th class="num">탐2백분</th>
+    <th>기존장학</th>
+  </tr></thead><tbody id="all-tbody">`;
   const rows=[...students].sort((a,b)=>b.환산-a.환산);
-  rows.forEach(s=>{h+=`<tr data-name="${s.이름}" data-ban="${s.반}" data-num="${s.번호}" data-kye="${s.계열}"><td>${s.반}반</td><td style="color:var(--gold2);font-weight:600">${BAN_CODE[String(s.반)]||'–'}</td><td class="nn">${s.번호}</td><td class="nm">${s.이름}</td><td>${s.계열}</td><td class="num">${s.영어등급}등급</td><td class="num">${s.국어표준}</td><td class="num">${s.국어백분}</td><td class="num">${s.수학표준}</td><td class="num">${s.수학백분}</td><td class="num">${s.탐1표준}</td><td class="num">${s.탐1백분}</td><td class="num">${s.탐2표준}</td><td class="num">${s.탐2백분}</td><td class="num rk1">${s.백분위합}</td><td class="num rk1">${s.환산.toFixed(1)}</td></tr>`;});
+  rows.forEach(s=>{
+    const d2=ENG_D[s.영어등급]??14;
+    const p=prevMap[String(s.번호)];
+    let miStr='<span class="dim">–</span>',tiStr='<span class="dim">–</span>';
+    if(p){
+      if(p.수학백분>0){const d=s.수학백분-p.수학백분;miStr=d>0?`<span class="iv">+${d}</span>`:d<0?`<span class="neg">${d}</span>`:'<span class="dim">±0</span>';}
+      if(p.국어백분>0&&p.수학백분>0&&p.탐1백분>0&&p.탐2백분>0){const d=s.백분위합-p.백분위합;tiStr=d>0?`<span class="iv">+${d}</span>`:d<0?`<span class="neg">${d}</span>`:'<span class="dim">±0</span>';}
+    }
+    const ex_=exgMap[String(s.번호)]||'';
+    const exgHtml=ex_?`<span class="bx bq">${ex_}</span>`:'<span class="dim">–</span>';
+    const engCell=s.영어결시?`<span class="neg" title="결시">결시</span>`:`${s.영어등급}등급`;
+    h+=`<tr data-name="${s.이름}" data-ban="${s.반}" data-num="${s.번호}" data-kye="${s.계열}">
+      <td>${s.반}반</td>
+      <td style="color:var(--gold2);font-weight:600">${BAN_CODE[String(s.반)]||'–'}</td>
+      <td class="nn">${s.번호}</td>
+      <td class="nm"><span class="name-link" onclick="showStudentDetail('${s.번호}','${s.이름}','${mk}')">${s.이름}</span></td>
+      <td>${s.계열}</td>
+      <td class="num rk1">${s.환산.toFixed(1)}</td>
+      <td class="num rk1">${s.백분위합}</td>
+      <td class="num">${miStr}</td>
+      <td class="num">${tiStr}</td>
+      <td class="num neg">-${d2}</td>
+      <td class="num">${s.국어표준}</td>
+      <td class="num">${s.국어백분}</td>
+      <td class="num">${s.수학표준}</td>
+      <td class="num">${s.수학백분}</td>
+      <td class="num">${engCell}</td>
+      <td class="num">${s.탐1표준}</td>
+      <td class="num">${s.탐1백분}</td>
+      <td class="num">${s.탐2표준}</td>
+      <td class="num">${s.탐2백분}</td>
+      <td>${exgHtml}</td>
+    </tr>`;
+  });
   h+=`</tbody></table></div></div>`;return h;
 }
 function filterAllTable(q){
@@ -595,31 +794,38 @@ const BILL_IDS=['billboard_in','billboard_nat','honor_in','honor_nat'];
 function isBillboard(w){return BILL_IDS.some(id=>SCONF.manual[id]&&w.lbl===SCONF.manual[id].lbl);}
 
 function pgStats(){
-  let h=`<div class="ph"><h2>통계 & 누적</h2><p>반별 성적 추이 · 장학 인원 통계 · 학생별 수상 이력</p></div>`;
+  let h=`<div class="ph"><h2>통계 & 누적</h2><p>반별 성적 추이 · 장학 인원 통계 · 학생별 수상 이력 <span class="dim" style="margin-left:8px">· 평균은 국/수/탐1/탐2 + 영어 응시자만 집계</span></p></div>`;
   const months=Object.keys(S.accumulated).sort();
   if(!months.length)return h+`<div class="notice">저장된 데이터가 없습니다. 최종 명단 탭에서 "이번달 저장"을 눌러 데이터를 쌓으세요.</div>`;
+
+  // 월별 통계 재계산 (allStudents가 있으면 새 기준으로, 없으면 저장값 fallback)
+  const monthStats={};months.forEach(k=>{monthStats[k]=getMonthStats(k);});
 
   const mhdr=months.map(k=>{const d=S.accumulated[k];const lbl=(d.label||mlbl(k)).replace(/\d{4}년 /,'');const jt=d.시험종류||'';return`<th>${lbl}${jt?`<br><span style='font-size:9px;font-weight:400'>(${jt})</span>`:''}</th>`;}).join('');
   const mhdrShort=months.map(k=>{const d=S.accumulated[k];return`<th>${(d.label||mlbl(k)).replace(/\d{4}년 /,'')}</th>`;}).join('');
 
-  // ── 표1: 반별 환산표점 평균
+  // ── 표1 + 그래프 좌우 배치
   h+=`<div class="sec-title">📊 반별 환산표점 평균 추이</div>`;
-  h+=`<div class="card"><div class="tw"><table class="stat-t"><thead><tr><th class="lh">반</th><th class="lh">반코드</th>${mhdr}</tr></thead><tbody>`;
+  h+=`<div class="stat-grid">`;
+  // [좌] 표
+  let tableHtml=`<div class="card"><div class="ch"><span class="ct">반별 평균표</span><span class="cs">${months.length}개월</span></div><div class="tw"><table class="stat-t"><thead><tr><th class="lh">반</th><th class="lh">코드</th>${mhdr}</tr></thead><tbody>`;
   BAN_LIST.forEach(ban=>{
-    h+=`<tr><td class="lh">${BAN_CODE[ban]||ban}</td><td class="lh" style="color:var(--mu);font-size:11px">${ban}</td>`;
-    months.forEach(k=>{const s=(S.accumulated[k].classStats||[]).find(x=>String(x.반)===ban);h+=s?`<td>${(+s.환산).toFixed(1)}</td>`:`<td class="zero">–</td>`;});
-    h+=`</tr>`;
+    tableHtml+=`<tr><td class="lh">${BAN_CODE[ban]||ban}</td><td class="lh" style="color:var(--mu);font-size:11px">${ban}</td>`;
+    months.forEach(k=>{const s=(monthStats[k].classStats||[]).find(x=>String(x.반)===ban);tableHtml+=s?`<td>${(+s.환산).toFixed(1)}</td>`:`<td class="zero">–</td>`;});
+    tableHtml+=`</tr>`;
   });
-  h+=`<tr><td class="tot-lh">평균</td><td class="tot-lh" style="font-size:11px">전체</td>`;
-  months.forEach(k=>{const d=S.accumulated[k];h+=d.overallAvg?`<td class="tot">${(+d.overallAvg).toFixed(1)}</td>`:`<td class="tot zero">–</td>`;});
-  h+=`</tr></tbody></table></div></div>`;
+  tableHtml+=`<tr><td class="tot-lh">평균</td><td class="tot-lh" style="font-size:11px">전체</td>`;
+  months.forEach(k=>{const ov=monthStats[k].overallAvg;tableHtml+=ov?`<td class="tot">${(+ov).toFixed(1)}</td>`:`<td class="tot zero">–</td>`;});
+  tableHtml+=`</tr></tbody></table></div></div>`;
+  h+=tableHtml;
+  // [우] 그래프
+  if(months.length>=2)h+=buildLineChart(months,monthStats);
+  else h+=`<div class="card"><div class="ch"><span class="ct">추이 그래프</span></div><div class="empty">2개월 이상 데이터가 쌓이면 그래프가 표시됩니다</div></div>`;
+  h+=`</div>`;
 
-  // ── 그래프
-  if(months.length>=2){h+=`<div class="sec-title">📈 환산표점 평균 추이 그래프</div>`;h+=buildLineChart(months,S.accumulated);}
-
-  // ── 표2: 서울 빌보드 인원 (반별, 인문/자연)
-  h+=`<div class="sec-title">🏫 서울 빌보드 인원 (반별)</div>`;
-  h+=`<div class="card"><div class="tw"><table class="stat-t"><thead><tr><th class="lh">반</th><th class="lh">반코드</th>`;
+  // ── 표2: 서울 빌보드 인원
+  h+=`<div class="sec-title">🏫 서울 빌보드 인원 (반별) <span class="dim" style="font-weight:400;font-size:11px;margin-left:6px">셀 클릭 → 학생 정보</span></div>`;
+  h+=`<div class="card"><div class="tw"><table class="stat-t"><thead><tr><th class="lh">반</th><th class="lh">코드</th>`;
   months.forEach(k=>{const d=S.accumulated[k];h+=`<th colspan="2">${(d.label||mlbl(k)).replace(/\d{4}년 /,'')}</th>`;});
   h+=`</tr><tr><th class="lh"></th><th class="lh"></th>`;months.forEach(()=>{h+=`<th>인문</th><th>자연</th>`;});h+=`</tr></thead><tbody>`;
   BAN_LIST.forEach(ban=>{
@@ -628,7 +834,10 @@ function pgStats(){
       const ws=(S.accumulated[k].winners||[]).filter(w=>!w.excluded&&isBillboard(w));
       const inH=ws.filter(w=>String(w.반)===ban&&getWinnerKye(w)==='인문').length;
       const inN=ws.filter(w=>String(w.반)===ban&&getWinnerKye(w)==='자연').length;
-      h+=`<td class="${inH===0?'zero':''}">${inH||'–'}</td><td class="${inN===0?'zero':''}">${inN||'–'}</td>`;
+      const ch=inH===0?'zero':'clickable';const cn=inN===0?'zero':'clickable';
+      const oH=inH>0?`onclick="showBillboardCell('${k}','${ban}','인문')"`:'';
+      const oN=inN>0?`onclick="showBillboardCell('${k}','${ban}','자연')"`:'';
+      h+=`<td class="${ch}" ${oH}>${inH||'–'}</td><td class="${cn}" ${oN}>${inN||'–'}</td>`;
     });h+=`</tr>`;
   });
   h+=`<tr><td class="tot-lh">계</td><td class="tot-lh" style="font-size:11px">전체</td>`;
@@ -636,50 +845,73 @@ function pgStats(){
   h+=`</tr></tbody></table></div></div>`;
 
   // ── 표3: 장학 종류별 인원
-  h+=`<div class="sec-title">🏆 장학 종류별 수여 인원</div>`;
-  const schRows=[
-    {lbl:SCONF.manual.dasung_in.lbl,fn:ws=>ws.filter(w=>w.lbl===SCONF.manual.dasung_in.lbl).length},
-    {lbl:SCONF.manual.dasung_nat.lbl,fn:ws=>ws.filter(w=>w.lbl===SCONF.manual.dasung_nat.lbl).length},
-    {lbl:SCONF.auto.d1.lbl,fn:ws=>ws.filter(w=>w.lbl===SCONF.auto.d1.lbl).length},
-    {lbl:SCONF.auto.d2.lbl,fn:ws=>ws.filter(w=>w.lbl===SCONF.auto.d2.lbl).length},
-    {lbl:SCONF.auto.qt.lbl,fn:ws=>ws.filter(w=>w.lbl===SCONF.auto.qt.lbl).length},
-    {lbl:'각 수학반 1등',fn:ws=>ws.filter(w=>w.lbl.startsWith(SCONF.auto.math.lbl)).length},
-    {lbl:SCONF.auto.mi.lbl,fn:ws=>ws.filter(w=>w.lbl===SCONF.auto.mi.lbl).length},
-    {lbl:SCONF.auto.ti.lbl,fn:ws=>ws.filter(w=>w.lbl===SCONF.auto.ti.lbl).length},
-    {lbl:SCONF.manual.improve_gift.lbl,fn:ws=>ws.filter(w=>w.lbl===SCONF.manual.improve_gift.lbl).length},
-    {lbl:SCONF.manual.honor_in.lbl,fn:ws=>ws.filter(w=>w.lbl===SCONF.manual.honor_in.lbl).length},
-    {lbl:SCONF.manual.honor_nat.lbl,fn:ws=>ws.filter(w=>w.lbl===SCONF.manual.honor_nat.lbl).length},
-  ];
+  h+=`<div class="sec-title">🏆 장학 종류별 수여 인원 <span class="dim" style="font-weight:400;font-size:11px;margin-left:6px">셀 클릭 → 학생 정보</span></div>`;
+  const schRows=getSchTypeRows();
   h+=`<div class="card"><div class="tw"><table class="stat-t"><thead><tr><th class="lh">장학</th>${mhdrShort}</tr></thead><tbody>`;
-  schRows.forEach(({lbl,fn})=>{
+  schRows.forEach(({key,lbl,match})=>{
     h+=`<tr><td class="lh">${lbl}</td>`;
-    months.forEach(k=>{const ws=(S.accumulated[k].winners||[]).filter(w=>!w.excluded);const cnt=fn(ws);h+=`<td class="${cnt===0?'zero':''}">${cnt||'–'}</td>`;});
+    months.forEach(k=>{
+      const ws=(S.accumulated[k].winners||[]).filter(w=>!w.excluded);const cnt=ws.filter(match).length;
+      const cls=cnt===0?'zero':'clickable';
+      const oc=cnt>0?`onclick="showSchTypeCell('${k}','${key}')"`:'';
+      h+=`<td class="${cls}" ${oc}>${cnt||'–'}</td>`;
+    });
     h+=`</tr>`;
   });
   h+=`<tr><td class="tot-lh">계</td>`;
   months.forEach(k=>{const ws=(S.accumulated[k].winners||[]).filter(w=>!w.excluded);h+=`<td class="tot">${ws.length}</td>`;});
   h+=`</tr></tbody></table></div></div>`;
 
-  // ── 학생별 수상이력
-  h+=`<div class="sec-title">📋 학생별 수상 이력</div>`;
+  // ── 학생별 수상이력 (정렬 가능)
+  h+=`<div class="sec-title">📋 학생별 수상 이력 <span class="dim" style="font-weight:400;font-size:11px;margin-left:6px">헤더 클릭 → 정렬 · 이름 클릭 → 상세 성적</span></div>`;
   const stuMap={};
   months.forEach(k=>{
     (S.accumulated[k].winners||[]).filter(w=>!w.excluded).forEach(w=>{
       const key=String(w.번호||w.이름);
       if(!stuMap[key])stuMap[key]={반:w.반,학번:w.번호||'',이름:w.이름,months:{}};
-      const abbrev=w.혜택==='식비 100%'?'식비100%':w.혜택==='식비 50%'?'식비50%':w.혜택.includes('독서실비')?'독서실비100%':w.혜택.includes('교습비')?'교습비100%':'매점5만';
+      const abbrev=w.혜택==='식비 100%'?'식비100%':w.혜택==='식비 50%'?'식비50%':w.혜택?.includes('독서실비')?'독서실비100%':w.혜택?.includes('교습비')?'교습비100%':'매점5만';
       if(!stuMap[key].months[k])stuMap[key].months[k]=[];
       stuMap[key].months[k].push(abbrev);
     });
   });
-  const stus=Object.values(stuMap).sort((a,b)=>{const da=Number(a.반)||99,db=Number(b.반)||99;return da!==db?da-db:Number(a.학번)-Number(b.학번);});
-  if(!stus.length){h+=`<div class="notice">저장된 수상 이력이 없습니다.</div>`;}
+  const stuArr=Object.values(stuMap);
+  // 각 학생의 마지막 수상 월 + 총 수상 건수
+  stuArr.forEach(s=>{
+    s.lastMonth='';s.totalCount=0;
+    months.forEach(k=>{if(s.months[k]?.length){s.lastMonth=k;s.totalCount+=s.months[k].length;}});
+  });
+  // 정렬
+  const dir=_stuSort.dir==='asc'?1:-1;const col=_stuSort.col;
+  stuArr.sort((a,b)=>{
+    let va,vb;
+    if(col==='ban'){va=Number(a.반)||99;vb=Number(b.반)||99;}
+    else if(col==='hb'){va=Number(a.학번)||0;vb=Number(b.학번)||0;}
+    else if(col==='name'){return a.이름.localeCompare(b.이름,'ko')*dir;}
+    else if(col==='lastMonth'){va=a.lastMonth||'';vb=b.lastMonth||'';}
+    else if(col.startsWith('month-')){const mk2=col.slice(6);va=a.months[mk2]?.length||0;vb=b.months[mk2]?.length||0;}
+    else{va=0;vb=0;}
+    if(va<vb)return -1*dir;if(va>vb)return 1*dir;
+    // tiebreaker
+    const ba=Number(a.반)||99,bb=Number(b.반)||99;if(ba!==bb)return ba-bb;
+    return (Number(a.학번)||0)-(Number(b.학번)||0);
+  });
+  const arr=v=>_stuSort.col===v?`<span class="arr">${_stuSort.dir==='desc'?'▼':'▲'}</span>`:'';
+  if(!stuArr.length){h+=`<div class="notice">저장된 수상 이력이 없습니다.</div>`;}
   else{
     const bc=v=>v.includes('교습비')||v.includes('식비')?'color:var(--red);font-weight:600':v.includes('독서실비')?'color:var(--blue);font-weight:600':'color:var(--amber)';
-    h+=`<div class="card"><div class="tw"><table class="stat-t"><thead><tr><th>No</th><th>반</th><th>학번</th><th class="lh">이름</th>${months.map(k=>`<th>${(S.accumulated[k].label||mlbl(k)).replace(/\d{4}년 /,'')}</th>`).join('')}</tr></thead><tbody>`;
-    stus.forEach((s,idx)=>{
-      h+=`<tr><td style="color:var(--mu);font-size:11px">${idx+1}</td><td>${s.반?s.반+'반':''}</td><td class="nn">${s.학번||'–'}</td><td class="lh nm">${s.이름}</td>`;
+    h+=`<div class="card"><div class="tw"><table class="stat-t"><thead><tr>
+      <th>No</th>
+      <th class="sort-h" onclick="toggleStuSort('ban')">반${arr('ban')}</th>
+      <th class="sort-h" onclick="toggleStuSort('hb')">학번${arr('hb')}</th>
+      <th class="lh sort-h" onclick="toggleStuSort('name')">이름${arr('name')}</th>
+      ${months.map(k=>`<th class="sort-h" onclick="toggleStuSort('month-${k}')">${(S.accumulated[k].label||mlbl(k)).replace(/\d{4}년 /,'')}${arr('month-'+k)}</th>`).join('')}
+      <th class="sort-h" onclick="toggleStuSort('lastMonth')">최근수상${arr('lastMonth')}</th>
+    </tr></thead><tbody>`;
+    stuArr.forEach((s,idx)=>{
+      const recent=s.lastMonth?(S.accumulated[s.lastMonth].label||mlbl(s.lastMonth)).replace(/\d{4}년 /,''):'–';
+      h+=`<tr><td style="color:var(--mu);font-size:11px">${idx+1}</td><td>${s.반?s.반+'반':''}</td><td class="nn">${s.학번||'–'}</td><td class="lh nm"><span class="name-link" onclick="showStudentDetail('${s.학번}','${s.이름}','${s.lastMonth}')">${s.이름}</span></td>`;
       months.forEach(k=>{const vals=s.months[k]||[];h+=vals.length?`<td style="font-size:10px">${vals.map(v=>`<div style="${bc(v)}">${v}</div>`).join('')}</td>`:`<td class="zero"></td>`;});
+      h+=`<td style="font-size:10px;color:var(--gold2);font-weight:500">${recent}</td>`;
       h+=`</tr>`;
     });
     h+=`</tbody></table></div></div>`;
@@ -718,28 +950,29 @@ function pgSettings(){
   return h;
 }
 
-function buildLineChart(months,acc){
-  const W=580,H=220,PL=50,PR=65,PT=20,PB=46;
+function buildLineChart(months,monthStats){
+  const W=460,H=380,PL=46,PR=58,PT=18,PB=50;
   const iW=W-PL-PR,iH=H-PT-PB;const n=months.length;
-  const ovAvgs=months.map(k=>+(acc[k].overallAvg||0));
+  const ovAvgs=months.map(k=>+(monthStats[k]?.overallAvg||0));
   const banSet=new Set();
-  months.forEach(k=>(acc[k].classStats||[]).forEach(s=>banSet.add(String(s.반))));
+  months.forEach(k=>(monthStats[k]?.classStats||[]).forEach(s=>banSet.add(String(s.반))));
   const bans=[...banSet].sort((a,b)=>a-b);
   const banData={};
-  bans.forEach(b=>{banData[b]=months.map(k=>{const s=(acc[k].classStats||[]).find(x=>String(x.반)===b);return s?+s.환산:null;});});
+  bans.forEach(b=>{banData[b]=months.map(k=>{const s=(monthStats[k]?.classStats||[]).find(x=>String(x.반)===b);return s?+s.환산:null;});});
   let allVals=[...ovAvgs.filter(v=>v>0)];
   bans.forEach(b=>allVals.push(...banData[b].filter(v=>v!==null)));
-  if(!allVals.length)return'';
+  if(!allVals.length)return`<div class="card"><div class="ch"><span class="ct">추이 그래프</span></div><div class="empty">데이터 없음</div></div>`;
   const mn=Math.min(...allVals),mx=Math.max(...allVals);
-  const pad=(mx-mn)*0.12||5;const lo=mn-pad,hi=mx+pad;
+  const pad=(mx-mn)*0.08||3;const lo=mn-pad,hi=mx+pad;
   const xp=i=>PL+i*(iW/Math.max(n-1,1));const yp=v=>PT+iH-(((v-lo)/(hi-lo))*iH);
   const COLORS=['#1a5fa0','#1e7a45','#a06010','#c0362a','#7b5fa0','#1a9090','#a05080','#608040'];
   let svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:${W}px;display:block;margin:0 auto;overflow:visible">`;
-  for(let i=0;i<=4;i++){const y=PT+iH*(i/4);const v=(hi-lo)*(1-i/4)+lo;svg+=`<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="var(--bo2)" stroke-width="1"/><text x="${PL-4}" y="${y+4}" text-anchor="end" font-size="9" fill="var(--mu)">${v.toFixed(0)}</text>`;}
+  // y 그리드 (8단계 — 세로가 길어진 만큼 더 촘촘하게)
+  for(let i=0;i<=8;i++){const y=PT+iH*(i/8);const v=(hi-lo)*(1-i/8)+lo;svg+=`<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="var(--bo2)" stroke-width="1"/><text x="${PL-4}" y="${y+3}" text-anchor="end" font-size="9" fill="var(--mu)">${v.toFixed(0)}</text>`;}
   months.forEach((k,i)=>{
-    const d=acc[k];const line1=(d.label||mlbl(k)).replace(/\d{4}년 /,'');const line2=d.시험종류||'';
+    const d=S.accumulated[k];const line1=(d.label||mlbl(k)).replace(/\d{4}년 /,'');const line2=d.시험종류||'';
     svg+=`<text x="${xp(i)}" y="${H-PB+14}" text-anchor="middle" font-size="9" fill="var(--mu)">${line1}</text>`;
-    if(line2)svg+=`<text x="${xp(i)}" y="${H-PB+24}" text-anchor="middle" font-size="8" fill="var(--mu2)">(${line2})</text>`;
+    if(line2)svg+=`<text x="${xp(i)}" y="${H-PB+26}" text-anchor="middle" font-size="8" fill="var(--mu2)">(${line2})</text>`;
     svg+=`<line x1="${xp(i)}" y1="${PT}" x2="${xp(i)}" y2="${H-PB}" stroke="var(--bo2)" stroke-width="1"/>`;
   });
   bans.forEach((b,ci)=>{
@@ -747,17 +980,17 @@ function buildLineChart(months,acc){
     pts.forEach((v,i)=>{if(v===null)return;if(!path)path=`M${xp(i)},${yp(v)}`;else path+=`L${xp(i)},${yp(v)}`;});
     if(path)svg+=`<path d="${path}" fill="none" stroke="${col}" stroke-width="1.5" stroke-dasharray="4 2" opacity=".7"/>`;
     let lastIdx=-1;
-    pts.forEach((v,i)=>{if(v!==null){svg+=`<circle cx="${xp(i)}" cy="${yp(v)}" r="3" fill="${col}" opacity=".8"><title>${acc[months[i]].label||months[i]} ${b}반: ${v.toFixed(1)}</title></circle>`;lastIdx=i;}});
+    pts.forEach((v,i)=>{if(v!==null){svg+=`<circle cx="${xp(i)}" cy="${yp(v)}" r="3" fill="${col}" opacity=".8"><title>${S.accumulated[months[i]].label||months[i]} ${b}반: ${v.toFixed(1)}</title></circle>`;lastIdx=i;}});
     if(lastIdx>=0&&banData[b][lastIdx]!==null)svg+=`<text x="${xp(lastIdx)+9}" y="${yp(banData[b][lastIdx])+4}" font-size="9" fill="${col}" font-weight="600">${BAN_CODE[b]||b}</text>`;
   });
   let oPath='';ovAvgs.forEach((v,i)=>{if(v>0)oPath+=(!oPath?`M${xp(i)},${yp(v)}`:`L${xp(i)},${yp(v)}`);});
   if(oPath)svg+=`<path d="${oPath}" fill="none" stroke="var(--gold)" stroke-width="2.5"/>`;
-  ovAvgs.forEach((v,i)=>{if(!v)return;svg+=`<circle cx="${xp(i)}" cy="${yp(v)}" r="4" fill="var(--gold)"><title>${acc[months[i]].label||months[i]} 전체: ${v.toFixed(1)}</title></circle><text x="${xp(i)}" y="${yp(v)-8}" text-anchor="middle" font-size="9" fill="var(--gold2)" font-weight="700">${v.toFixed(1)}</text>`;});
+  ovAvgs.forEach((v,i)=>{if(!v)return;svg+=`<circle cx="${xp(i)}" cy="${yp(v)}" r="4" fill="var(--gold)"><title>${S.accumulated[months[i]].label||months[i]} 전체: ${v.toFixed(1)}</title></circle><text x="${xp(i)}" y="${yp(v)-8}" text-anchor="middle" font-size="9" fill="var(--gold2)" font-weight="700">${v.toFixed(1)}</text>`;});
   svg+=`</svg>`;
-  let legend=`<div style="display:flex;flex-wrap:wrap;gap:5px 12px;padding:6px 10px 10px;font-size:11px"><span style="color:var(--gold);font-weight:700">● 전체평균</span>`;
+  let legend=`<div style="display:flex;flex-wrap:wrap;gap:4px 10px;padding:6px 10px 10px;font-size:11px"><span style="color:var(--gold);font-weight:700">● 전체평균</span>`;
   bans.forEach((b,ci)=>{legend+=`<span style="color:${COLORS[ci%COLORS.length]};opacity:.85">-- ${BAN_CODE[b]||b}반(${b})</span>`;});
   legend+=`</div>`;
-  return`<div class="card" style="margin-bottom:12px"><div style="padding:12px 8px 0">${svg}</div>${legend}</div>`;
+  return`<div class="card"><div class="ch"><span class="ct">추이 그래프</span><span class="cs">${months.length}개월</span></div><div style="padding:8px 6px 0">${svg}</div>${legend}</div>`;
 }
 
 function ubH(id,lbl,sub){

@@ -212,11 +212,37 @@ let S={
   dbg:'',err:null,syncMsg:'',userEmail:'',
 };
 let _ws=[];let _mSel=new Set();let _mSort='desc';
+// 전체명단 탭 정렬/필터 상태
+let _allSort={col:'환산',dir:'desc'};
+let _allFilter={q:'',kye:''};
 function initManual(){Object.keys(SCONF.manual).forEach(id=>{if(!S.manual[id]||!S.manual[id].length)S.manual[id]=[erow(id)];});}
 function erow(id){const r={};(SCONF.manual[id]?.cols||[]).forEach(c=>r[c]='');return r;}
 function mkey(){return`${S.curYear}-${S.curMonth.padStart(2,'0')}`;}
 function mlbl(mk){const m=mk.match(/^(\d{4})-(\d{2})$/);if(!m)return mk;return`${m[1]}년 ${parseInt(m[2])}월`;}
 function fullLbl(mk){const d=S.accumulated[mk];const base=d?.label||mlbl(mk);const jt=d?.시험종류||'';return jt?`${base} (${jt})`:base;}
+// 저장된 월의 allStudents 가 있으면 현재 작업 상태(curStudents/prevStudents/results)로 복원
+// — 페이지 새로고침해도 마지막 업로드 데이터 유지, 수기입력 탭에서도 학생 명단 그대로 사용 가능
+function restoreCurrentMonthFromSaved(){
+  const mk=mkey();
+  const d=S.accumulated[mk];
+  if(d?.allStudents?.length){
+    S.curStudents=d.allStudents;
+    if(!S.curFile)S.curFile='(저장본 복원)';
+    S.monthConfirmed=true;
+    // 이전달 데이터도 자동 복원 (향상 장학 계산용)
+    const months=Object.keys(S.accumulated).sort();
+    const idx=months.indexOf(mk);
+    if(idx>0){
+      const prevMk=months[idx-1];
+      const prevD=S.accumulated[prevMk];
+      if(prevD?.allStudents?.length){
+        S.prevStudents=prevD.allStudents;
+        if(!S.prevFile)S.prevFile=`(${prevD.label||mlbl(prevMk)} 저장본)`;
+      }
+    }
+    S.results=calcResults();
+  }
+}
 async function loadAll(){
   try{
     const cfgDoc=await db.collection('quetta_settings').doc('sconf').get();
@@ -236,7 +262,9 @@ async function loadAll(){
       if(d.remarks)S.remarks=d.remarks;
       if(d.시험종류)S.시험종류=d.시험종류;
     }
-    initManual();setSyncMsg('✓ 로드 완료');
+    initManual();
+    restoreCurrentMonthFromSaved();
+    setSyncMsg('✓ 로드 완료');
   }catch(e){setSyncMsg('⚠ 로드 실패: '+e.message);}
 }
 async function saveAutoResults(){
@@ -287,6 +315,8 @@ async function loadMonthData(){
   const mk=mkey();
   Object.keys(SCONF.manual).forEach(id=>{S.manual[id]=[erow(id)];});
   S.excluded=new Set();S.remarks={};S.monthConfirmed=false;S.finalViewMonth=null;
+  // 작업 상태 초기화 (월이 바뀌었으니 현재 메모리의 학생 명단 비움)
+  S.curStudents=null;S.prevStudents=null;S.curFile=null;S.prevFile=null;S.results=null;
   if(S.accumulated[mk]){
     const d=S.accumulated[mk];
     if(d.manual)Object.keys(SCONF.manual).forEach(id=>{if(d.manual[id])S.manual[id]=d.manual[id];});
@@ -294,6 +324,8 @@ async function loadMonthData(){
     if(d.remarks)S.remarks=d.remarks;
     if(d.시험종류)S.시험종류=d.시험종류;
   }
+  // 새 월의 저장본 자동 복원
+  restoreCurrentMonthFromSaved();
   render();
 }
 function setSyncMsg(m){S.syncMsg=m;const el=document.getElementById('sync-msg');if(el)el.textContent=m;}
@@ -712,10 +744,23 @@ function pgFinal(){
   });
   h+=`</tbody></table></div></div>`;return h;
 }
+function toggleAllSort(col){
+  if(_allSort.col===col){_allSort.dir=_allSort.dir==='asc'?'desc':'asc';}
+  else{
+    _allSort.col=col;
+    const strCols=['이름','계열','코드','기존장학'];
+    _allSort.dir=strCols.includes(col)?'asc':'desc';
+  }
+  render();
+  // 검색/필터 다시 적용 (render 시 input value는 _allFilter로 복원되지만 필터 효과는 직접 호출)
+  if(_allFilter.q||_allFilter.kye){
+    setTimeout(()=>filterAllTable(_allFilter.q),0);
+  }
+}
 function pgAll(){
   const months=Object.keys(S.accumulated).sort();
   const avail=months.filter(k=>S.allStudentsData[k]||S.accumulated[k]?.allStudents);
-  let h=`<div class="ph"><h2>전체 명단</h2><p>월별 전체 학생 성적 상세 조회 <span class="dim" style="margin-left:6px">· 이름 클릭 → 상세 모달</span></p></div>`;
+  let h=`<div class="ph"><h2>전체 명단</h2><p>월별 전체 학생 성적 상세 조회 <span class="dim" style="margin-left:6px">· 이름 클릭 → 상세 모달 · 헤더 클릭 → 정렬</span></p></div>`;
   const mk=S.allViewMonth||(avail.includes(mkey())?mkey():avail.slice(-1)[0]||mkey());
   h+=`<div class="btn-row"><select class="fi" onchange="S.allViewMonth=this.value||null;render()"><option value="">— 월 선택 —</option>${avail.slice().reverse().map(k=>`<option value="${k}"${k===mk?' selected':''}>${fullLbl(k)}</option>`).join('')}</select></div>`;
   const students=S.allStudentsData[mk]||S.accumulated[mk]?.allStudents||(mk===mkey()?S.curStudents:null);
@@ -725,26 +770,80 @@ function pgAll(){
   const idx=months.indexOf(mk);const prevMk=idx>0?months[idx-1]:null;
   const prevStus=prevMk?(S.allStudentsData[prevMk]||S.accumulated[prevMk]?.allStudents||[]):[];
   const prevMap={};prevStus.forEach(s=>{prevMap[String(s.번호)]=s;});
-  // 기존장학 매칭 (현재월=S.exMap, 과거월=winners에서 추출)
+  // 기존장학 매칭
   const exgMap={};
   if(mk===mkey()){Object.assign(exgMap,S.exMap);}
   (S.accumulated[mk]?.winners||[]).forEach(w=>{if(w.기존장학&&!exgMap[String(w.번호)])exgMap[String(w.번호)]=w.기존장학;});
 
+  // 향상 점수 계산 헬퍼 (정렬용)
+  const calcMi=s=>{const p=prevMap[String(s.번호)];if(!p||p.수학백분<=0)return null;return s.수학백분-p.수학백분;};
+  const calcTi=s=>{const p=prevMap[String(s.번호)];if(!p||p.국어백분<=0||p.수학백분<=0||p.탐1백분<=0||p.탐2백분<=0)return null;return s.백분위합-p.백분위합;};
+
   const prevInfo=prevMk?`<span class="dim" style="font-size:11px;margin-left:8px">↑ 향상: ${fullLbl(prevMk)} 대비</span>`:'';
-  h+=`<div class="card" style="margin-bottom:10px"><div style="padding:10px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input class="fi" id="all-q" type="text" placeholder="이름, 반, 번호 검색..." style="width:180px" oninput="filterAllTable(this.value)"><select class="fi" id="all-kye" onchange="filterAllTable(document.getElementById('all-q').value)"><option value="">계열 전체</option><option value="인문">인문</option><option value="자연">자연</option></select><span style="font-size:12px;color:var(--mu)">총 ${students.length}명</span>${prevInfo}</div></div>`;
+  const fq=(_allFilter.q||'').replace(/"/g,'&quot;');
+  h+=`<div class="card" style="margin-bottom:10px"><div style="padding:10px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center"><input class="fi" id="all-q" type="text" placeholder="이름, 반, 번호 검색..." style="width:180px" value="${fq}" oninput="_allFilter.q=this.value;filterAllTable(this.value)"><select class="fi" id="all-kye" onchange="_allFilter.kye=this.value;filterAllTable(document.getElementById('all-q').value)"><option value="">계열 전체</option><option value="인문"${_allFilter.kye==='인문'?' selected':''}>인문</option><option value="자연"${_allFilter.kye==='자연'?' selected':''}>자연</option></select><span style="font-size:12px;color:var(--mu)">총 ${students.length}명</span>${prevInfo}</div></div>`;
+
+  // 정렬 적용
+  const dir=_allSort.dir==='asc'?1:-1;const col=_allSort.col;
+  const cmp=(a,b)=>{
+    let va,vb;
+    if(col==='반'){va=Number(a.반)||99;vb=Number(b.반)||99;}
+    else if(col==='코드'){const ca=BAN_CODE[String(a.반)]||'zz';const cb=BAN_CODE[String(b.반)]||'zz';return ca.localeCompare(cb)*dir;}
+    else if(col==='번호'){va=Number(a.번호)||0;vb=Number(b.번호)||0;}
+    else if(col==='이름'){return (a.이름||'').localeCompare(b.이름||'','ko')*dir;}
+    else if(col==='계열'){return (a.계열||'').localeCompare(b.계열||'','ko')*dir;}
+    else if(col==='환산'){va=a.환산;vb=b.환산;}
+    else if(col==='백분위합'){va=a.백분위합;vb=b.백분위합;}
+    else if(col==='수학백분↑'){va=calcMi(a);vb=calcMi(b);}
+    else if(col==='백분위합↑'){va=calcTi(a);vb=calcTi(b);}
+    else if(col==='영어감점'){va=ENG_D[a.영어등급]??14;vb=ENG_D[b.영어등급]??14;}
+    else if(col==='국어표준'){va=a.국어표준;vb=b.국어표준;}
+    else if(col==='국어백분'){va=a.국어백분;vb=b.국어백분;}
+    else if(col==='수학표준'){va=a.수학표준;vb=b.수학표준;}
+    else if(col==='수학백분'){va=a.수학백분;vb=b.수학백분;}
+    else if(col==='영어등급'){va=a.영어등급;vb=b.영어등급;}
+    else if(col==='탐1표준'){va=a.탐1표준;vb=b.탐1표준;}
+    else if(col==='탐1백분'){va=a.탐1백분;vb=b.탐1백분;}
+    else if(col==='탐2표준'){va=a.탐2표준;vb=b.탐2표준;}
+    else if(col==='탐2백분'){va=a.탐2백분;vb=b.탐2백분;}
+    else if(col==='기존장학'){return (exgMap[String(a.번호)]||'').localeCompare(exgMap[String(b.번호)]||'','ko')*dir;}
+    else{va=a.환산;vb=b.환산;}
+    // 향상 점수처럼 null일 수 있는 경우 항상 끝으로
+    if(va===null&&vb===null)return 0;
+    if(va===null)return 1;
+    if(vb===null)return -1;
+    if(va<vb)return -1*dir;
+    if(va>vb)return 1*dir;
+    return 0;
+  };
+  const rows=[...students].sort(cmp);
+
+  // 화살표 헬퍼
+  const arr=v=>_allSort.col===v?`<span class="arr">${_allSort.dir==='desc'?'▼':'▲'}</span>`:'';
+  const hcell=(col,label,cls)=>`<th class="${cls||''} sort-h" onclick="toggleAllSort('${col}')">${label}${arr(col)}</th>`;
+
   h+=`<div class="card"><div class="tw"><table class="t" id="all-table"><thead><tr>
-    <th>반</th><th>코드</th><th>번호</th><th>이름</th><th>계열</th>
-    <th class="num">환산표점</th><th class="num">백분위합</th>
-    <th class="num">수학백분↑</th><th class="num">백분위합↑</th>
-    <th class="num">영어감점</th>
-    <th class="num">국어표준</th><th class="num">국어백분</th>
-    <th class="num">수학표준</th><th class="num">수학백분</th>
-    <th class="num">영어등급</th>
-    <th class="num">탐1표준</th><th class="num">탐1백분</th>
-    <th class="num">탐2표준</th><th class="num">탐2백분</th>
-    <th>기존장학</th>
+    ${hcell('반','반')}
+    ${hcell('코드','코드')}
+    ${hcell('번호','번호')}
+    ${hcell('이름','이름')}
+    ${hcell('계열','계열')}
+    ${hcell('환산','환산표점','num')}
+    ${hcell('백분위합','백분위합','num')}
+    ${hcell('수학백분↑','수학백분↑','num')}
+    ${hcell('백분위합↑','백분위합↑','num')}
+    ${hcell('영어감점','영어감점','num')}
+    ${hcell('국어표준','국어표준','num')}
+    ${hcell('국어백분','국어백분','num')}
+    ${hcell('수학표준','수학표준','num')}
+    ${hcell('수학백분','수학백분','num')}
+    ${hcell('영어등급','영어등급','num')}
+    ${hcell('탐1표준','탐1표준','num')}
+    ${hcell('탐1백분','탐1백분','num')}
+    ${hcell('탐2표준','탐2표준','num')}
+    ${hcell('탐2백분','탐2백분','num')}
+    ${hcell('기존장학','기존장학')}
   </tr></thead><tbody id="all-tbody">`;
-  const rows=[...students].sort((a,b)=>b.환산-a.환산);
   rows.forEach(s=>{
     const d2=ENG_D[s.영어등급]??14;
     const p=prevMap[String(s.번호)];

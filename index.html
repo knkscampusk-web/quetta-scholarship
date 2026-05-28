@@ -137,6 +137,11 @@ input[type=checkbox]{cursor:pointer;accent-color:var(--gold);width:13px;height:1
 .sort-h{cursor:pointer;user-select:none}
 .sort-h:hover{background:var(--bg4)}
 .sort-h .arr{color:var(--amber);font-size:10px;margin-left:2px}
+.loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:65vh;color:var(--mu);font-size:14px;text-align:center;padding:40px 20px}
+.loading-spinner{width:38px;height:38px;border:3px solid var(--bo);border-top-color:var(--gold);border-radius:50%;animation:qspin 0.8s linear infinite;margin-bottom:16px}
+@keyframes qspin{to{transform:rotate(360deg)}}
+.loading-screen .msg{font-size:14px;font-weight:600;color:var(--w2);margin-bottom:6px}
+.loading-screen .sub{font-size:11px;color:var(--mu);min-height:16px}
 </style>
 </head>
 <body>
@@ -166,7 +171,15 @@ async function doLogin(){
   catch(e){const m={'auth/wrong-password':'비밀번호 오류','auth/too-many-requests':'잠시 후 다시 시도'};document.getElementById('li-err').textContent=m[e.code]||e.message;}
 }
 auth.onAuthStateChanged(async user=>{
-  if(user){document.getElementById('login-screen').style.display='none';document.getElementById('app-screen').style.display='flex';S.userEmail=user.email;await loadAll();render();}
+  if(user){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app-screen').style.display='flex';
+    S.userEmail=user.email;
+    // 로딩 화면 표시 (loadAll 중 흰 화면 방지)
+    document.getElementById('sb').innerHTML='<div class="brand"><h1>QUETTA</h1><p>장학 관리 시스템</p></div><div style="padding:10px 12px;font-size:11px;color:var(--mu)">'+user.email+'</div>';
+    document.getElementById('main').innerHTML='<div class="loading-screen"><div class="loading-spinner"></div><div class="msg">데이터 로딩 중...</div><div class="sub" id="load-sub">서버 연결</div></div>';
+    await loadAll();render();
+  }
   else{document.getElementById('login-screen').style.display='flex';document.getElementById('app-screen').style.display='none';}
 });
 function doLogout(){auth.signOut();}
@@ -244,14 +257,18 @@ function restoreCurrentMonthFromSaved(){
   }
 }
 async function loadAll(){
+  const setLoadSub=t=>{const el=document.getElementById('load-sub');if(el)el.textContent=t;};
   try{
+    setLoadSub('설정 가져오는 중...');
     const cfgDoc=await db.collection('quetta_settings').doc('sconf').get();
     if(cfgDoc.exists){
       const sv=cfgDoc.data();
       if(sv.auto)Object.keys(sv.auto).forEach(k=>{if(SCONF.auto[k])Object.assign(SCONF.auto[k],sv.auto[k]);});
       if(sv.manual)Object.keys(sv.manual).forEach(k=>{if(SCONF.manual[k])Object.assign(SCONF.manual[k],sv.manual[k]);});
     }
+    setLoadSub('월별 데이터 가져오는 중... (데이터 양에 따라 몇 초 걸릴 수 있습니다)');
     const snap=await db.collection('quetta_data').get();
+    setLoadSub(`${snap.size}개월 데이터 정리 중...`);
     S.accumulated={};S.allStudentsData={};
     snap.forEach(doc=>{const d=doc.data();S.accumulated[doc.id]=d;if(d.allStudents)S.allStudentsData[doc.id]=d.allStudents;});
     const mk=mkey();
@@ -264,8 +281,12 @@ async function loadAll(){
     }
     initManual();
     restoreCurrentMonthFromSaved();
-    setSyncMsg('✓ 로드 완료');
-  }catch(e){setSyncMsg('⚠ 로드 실패: '+e.message);}
+    setLoadSub('완료');
+    setSyncMsg('✓ 로드 완료 ('+snap.size+'개월)');
+  }catch(e){
+    setLoadSub('⚠ 오류: '+e.message);
+    setSyncMsg('⚠ 로드 실패: '+e.message);
+  }
 }
 async function saveAutoResults(){
   const mk=mkey();

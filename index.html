@@ -799,13 +799,23 @@ function pgManual(){
 function pgFinal(){
   const months=Object.keys(S.accumulated).sort();const pastMonths=months.filter(k=>k!==mkey());
   if(S.finalViewMonth&&S.accumulated[S.finalViewMonth]){
-    const d=S.accumulated[S.finalViewMonth];const winners=d.winners||[];const act=winners.filter(w=>!w.excluded).length;
+    const d=S.accumulated[S.finalViewMonth];const winners=d.winners||[];const act=winners.filter(w=>!w.excluded).length;const exCnt=winners.filter(w=>w.excluded).length;
     let h=`<div class="ph"><h2>최종 명단</h2><p>${fullLbl(S.finalViewMonth)} 저장본 (읽기 전용)</p></div>`;
-    h+=`<div class="btn-row"><button class="btn" onclick="S.finalViewMonth=null;render()">← 이번달로</button><select class="fi" onchange="S.finalViewMonth=this.value||null;render()"><option value="">— 월 선택 —</option>${months.map(k=>`<option value="${k}"${k===S.finalViewMonth?' selected':''}>${fullLbl(k)}</option>`).join('')}</select></div>`;
-    h+=`<div class="notice">📁 ${fullLbl(S.finalViewMonth)} · 총 ${winners.length}건 | 최종 ${act}건</div>`;
+    const toggleLbl=_finalShowExcluded?'👁 제외 항목 표시 중':'🚫 제외 항목 숨김';
+    const toggleCls=_finalShowExcluded?'btn-b':'btn';
+    h+=`<div class="btn-row"><button class="btn" onclick="S.finalViewMonth=null;render()">← 이번달로</button><select class="fi" onchange="S.finalViewMonth=this.value||null;render()"><option value="">— 월 선택 —</option>${months.map(k=>`<option value="${k}"${k===S.finalViewMonth?' selected':''}>${fullLbl(k)}</option>`).join('')}</select>${exCnt?`<button class="${toggleCls}" onclick="_finalShowExcluded=!_finalShowExcluded;render()">${toggleLbl}</button>`:''}</div>`;
+    h+=`<div class="notice">📁 ${fullLbl(S.finalViewMonth)} · 총 ${winners.length}건 | 최종 ${act}건${exCnt?` | 제외 ${exCnt}건`:''}</div>`;
     if(!winners.length)return h+`<div class="empty">저장된 장학생이 없습니다.</div>`;
     h+=`<div class="card"><div class="tw"><table class="t"><thead><tr><th>상태</th><th>장학명</th><th>혜택</th><th>반</th><th>번호</th><th>이름</th><th>계열</th><th>환산/향상</th><th>기존장학</th><th>비고</th></tr></thead><tbody>`;
-    winners.forEach(w=>{const ex=w.excluded;const _exg=w.기존장학||'';const exg=_exg?`<span class="bx bq">${_exg}</span>`:'–';h+=`<tr class="${ex?'ex':''}"><td style="color:${ex?'var(--red)':'var(--green)'};font-size:11px">${ex?'제외':'✓'}</td><td><span class="bx ${w.bc}">${w.lbl}</span></td><td style="font-size:11px;color:var(--mu)">${w.혜택}</td><td>${w.반?w.반+'반':''}</td><td class="nn">${w.번호||'–'}</td><td class="nm"><span class="name-link" onclick="showStudentDetail('${w.번호}','${w.이름}','${S.finalViewMonth}')">${w.이름}</span></td><td>${w.계열||'–'}</td><td class="nn">${w.val}</td><td>${exg}</td><td style="font-size:11px;color:var(--mu)">${w.비고||''}</td></tr>`;});
+    let vcnt=0;
+    winners.forEach(w=>{
+      const ex=w.excluded;
+      if(ex&&!_finalShowExcluded)return;
+      vcnt++;
+      const _exg=w.기존장학||'';const exg=_exg?`<span class="bx bq">${_exg}</span>`:'–';
+      h+=`<tr class="${ex?'ex':''}"><td style="color:${ex?'var(--red)':'var(--green)'};font-size:11px">${ex?'제외':'✓'}</td><td><span class="bx ${w.bc}">${w.lbl}</span></td><td style="font-size:11px;color:var(--mu)">${w.혜택}</td><td>${w.반?w.반+'반':''}</td><td class="nn">${w.번호||'–'}</td><td class="nm"><span class="name-link" onclick="showStudentDetail('${w.번호}','${w.이름}','${S.finalViewMonth}')">${w.이름}</span></td><td>${w.계열||'–'}</td><td class="nn">${w.val}</td><td>${exg}</td><td style="font-size:11px;color:var(--mu)">${w.비고||''}</td></tr>`;
+    });
+    if(!vcnt){h+=`<tr><td colspan="10" class="empty" style="padding:14px">${_finalShowExcluded?'표시할 항목 없음':'모든 항목이 제외 상태입니다'}</td></tr>`;}
     h+=`</tbody></table></div></div>`;return h;
   }
   _ws=getAllWinners();

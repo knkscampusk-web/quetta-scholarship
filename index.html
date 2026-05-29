@@ -6,7 +6,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <style>
 :root{
   --bg:#f9f9f7;--bg2:#ffffff;--bg3:#f0efe9;--bg4:#e8e7e0;
@@ -228,6 +228,8 @@ let _ws=[];let _mSel=new Set();let _mSort='desc';
 // 전체명단 탭 정렬/필터 상태
 let _allSort={col:'환산',dir:'desc'};
 let _allFilter={q:'',kye:''};
+// 최종명단: 제외 항목 보이기 토글 (기본 false: 숨김)
+let _finalShowExcluded=false;
 function initManual(){Object.keys(SCONF.manual).forEach(id=>{if(!S.manual[id]||!S.manual[id].length)S.manual[id]=[erow(id)];});}
 function erow(id){const r={};(SCONF.manual[id]?.cols||[]).forEach(c=>r[c]='');return r;}
 function mkey(){return`${S.curYear}-${S.curMonth.padStart(2,'0')}`;}
@@ -460,7 +462,10 @@ function getAllWinners(){
   }
   ACTIVE_MANUAL.forEach(id=>{
     const mc=SCONF.manual[id];
-    (S.manual[id]||[]).filter(row=>row.이름).forEach(row=>{ws.push({lbl:mc.lbl,bc:mc.bc,혜택:mc.혜택,반:row.반||'',번호:row.학번||'',이름:row.이름,계열:row.계열||'',val:row.환산점수||row.비고||'',type:'manual',기존장학:S.exMap[String(row.학번)]||'',dup:[]});});
+    (S.manual[id]||[]).forEach((row,ri)=>{
+      if(!row.이름)return;
+      ws.push({lbl:mc.lbl,bc:mc.bc,혜택:mc.혜택,반:row.반||'',번호:row.학번||'',이름:row.이름,계열:row.계열||'',val:row.환산점수||'',type:'manual',기존장학:S.exMap[String(row.학번)]||'',dup:[],manualSchId:id,manualRi:ri,manualNote:row.비고||''});
+    });
   });
   const nc={};ws.forEach(w=>nc[w.이름]=(nc[w.이름]||0)+1);
   ws.forEach(w=>{if(nc[w.이름]>1)w.dup=ws.filter(x=>x.이름===w.이름&&x.lbl!==w.lbl).map(x=>x.lbl);});
@@ -471,15 +476,36 @@ function exportExcel(){
   const wb=XLSX.utils.book_new();const ws=getAllWinners();
   const h1=['장학명','혜택','반','번호/학번','이름','계열','환산/향상','기존장학','중복여부','제외여부','비고'];
   const rows=[h1];
-  ws.forEach(w=>{const ex=S.excluded.has(wkey(w));rows.push([w.lbl,w.혜택,w.반,w.번호,w.이름,w.계열,w.val,S.exMap[String(w.번호)]||w.기존장학||'',w.dup?.length?'중복:'+w.dup.join(', '):'',ex?'제외':'',S.remarks[wkey(w)]||'']);});
+  const exFlags=[false]; // 헤더 행은 제외 아님
+  ws.forEach(w=>{
+    const k=wkey(w);const ex=S.excluded.has(k);
+    const note=S.remarks[k]!==undefined?S.remarks[k]:(w.manualNote||'');
+    rows.push([w.lbl,w.혜택,w.반,w.번호,w.이름,w.계열,w.val,S.exMap[String(w.번호)]||w.기존장학||'',w.dup?.length?'중복:'+w.dup.join(', '):'',ex?'제외':'',note]);
+    exFlags.push(ex);
+  });
   const s1=XLSX.utils.aoa_to_sheet(rows);s1['!cols']=[{wch:22},{wch:14},{wch:5},{wch:8},{wch:10},{wch:5},{wch:10},{wch:18},{wch:20},{wch:6},{wch:20}];
+  // 헤더 셀 스타일 (굵게)
+  const headerStyle={font:{bold:true},alignment:{horizontal:'center'},fill:{fgColor:{rgb:'F0EFE9'}}};
+  const excludedStyle={font:{strike:true,color:{rgb:'999999'}}};
+  const range=XLSX.utils.decode_range(s1['!ref']);
+  for(let R=range.s.r;R<=range.e.r;++R){
+    for(let C=range.s.c;C<=range.e.c;++C){
+      const addr=XLSX.utils.encode_cell({r:R,c:C});
+      if(!s1[addr])continue;
+      if(R===0){s1[addr].s=headerStyle;}
+      else if(exFlags[R]){s1[addr].s=excludedStyle;}
+    }
+  }
   XLSX.utils.book_append_sheet(wb,s1,'장학생명단');
   const stats=calcClassStats();
   if(stats.length){
     const h2=['반','인원','환산평균','국어평균','수학평균','탐구합산평균'];const rows2=[h2];
     stats.forEach(s=>rows2.push([s.반+'반',s.인원,+s.환산.toFixed(1),+s.국어.toFixed(1),+s.수학.toFixed(1),+(s.탐1+s.탐2).toFixed(1)]));
     rows2.push(['전체',S.curStudents?.length||0,+overallAvg().toFixed(1),'','','']);
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows2),'반별평균');
+    const s2=XLSX.utils.aoa_to_sheet(rows2);
+    const r2=XLSX.utils.decode_range(s2['!ref']);
+    for(let C=r2.s.c;C<=r2.e.c;++C){const addr=XLSX.utils.encode_cell({r:0,c:C});if(s2[addr])s2[addr].s=headerStyle;}
+    XLSX.utils.book_append_sheet(wb,s2,'반별평균');
   }
   XLSX.writeFile(wb,`QUETTA_장학_${S.curYear}_${S.curMonth.padStart(2,'0')}.xlsx`);
 }
@@ -514,9 +540,25 @@ function addManualStudent(){
   _mSel=new Set();autoSaveManual();render();
 }
 function delManualStudent(schId,ri){S.manual[schId].splice(ri,1);autoSaveManual();render();}
-function updManualNote(schId,ri,val){if(S.manual[schId]?.[ri])S.manual[schId][ri].비고=val;autoSaveManual();}
 function toggleExcl(idx){const k=wkey(_ws[idx]);if(S.excluded.has(k))S.excluded.delete(k);else S.excluded.add(k);autoSaveManual();render();}
-function updRemark(idx,val){const k=wkey(_ws[idx]);S.remarks[k]=val;autoSaveManual();}
+function updRemark(idx,val){
+  const w=_ws[idx];const k=wkey(w);
+  S.remarks[k]=val;
+  // 수기 entry 면 manual 원본 비고도 sync
+  if(w.type==='manual'&&w.manualSchId&&w.manualRi!==undefined&&S.manual[w.manualSchId]?.[w.manualRi]){
+    S.manual[w.manualSchId][w.manualRi].비고=val;
+  }
+  autoSaveManual();
+}
+function updManualNote(schId,ri,val){
+  if(S.manual[schId]?.[ri]){
+    S.manual[schId][ri].비고=val;
+    // 최종명단 비고도 sync (wkey 만들어서 remarks 에도 저장)
+    const def=SCONF.manual[schId];const row=S.manual[schId][ri];
+    if(def&&row.이름){const k=row.이름+'::'+def.lbl;S.remarks[k]=val;}
+  }
+  autoSaveManual();
+}
 
 // ───── 모달 시스템 ─────
 function showModal(title,bodyHtml){
@@ -769,17 +811,26 @@ function pgFinal(){
   _ws=getAllWinners();
   const act=_ws.filter((_,i)=>!S.excluded.has(wkey(_ws[i]))).length;
   let h=`<div class="ph"><h2>최종 명단</h2><p>${S.curYear}년 ${S.curMonth}월 · 총 ${_ws.length}건 | 제외 ${S.excluded.size}건 | 최종 ${act}건</p></div>`;
-  h+=`<div class="btn-row"><button class="btn btn-g" onclick="exportExcel()">⬇ 엑셀 다운로드</button><button class="btn btn-gr" onclick="saveToFirestore().then(()=>render())">☁ 이번달 저장</button>${pastMonths.length?`<select class="fi" style="margin-left:auto" onchange="if(this.value){S.finalViewMonth=this.value;render();}this.value=''"><option value="">📅 지난달 명단 조회...</option>${pastMonths.slice().reverse().map(k=>`<option value="${k}">${fullLbl(k)}</option>`).join('')}</select>`:''}</div>`;
-  h+=`<div style="font-size:11px;color:var(--mu);margin-bottom:10px">☑ 체크 = 제외(줄 긋기) · 비고 입력 후 저장시 엑셀에도 반영</div>`;
+  const toggleLbl=_finalShowExcluded?'👁 제외 항목 표시 중':'🚫 제외 항목 숨김';
+  const toggleCls=_finalShowExcluded?'btn-b':'btn';
+  h+=`<div class="btn-row"><button class="btn btn-g" onclick="exportExcel()">⬇ 엑셀 다운로드</button><button class="btn btn-gr" onclick="saveToFirestore().then(()=>render())">☁ 이번달 저장</button><button class="${toggleCls}" onclick="_finalShowExcluded=!_finalShowExcluded;render()">${toggleLbl}</button>${pastMonths.length?`<select class="fi" style="margin-left:auto" onchange="if(this.value){S.finalViewMonth=this.value;render();}this.value=''"><option value="">📅 지난달 명단 조회...</option>${pastMonths.slice().reverse().map(k=>`<option value="${k}">${fullLbl(k)}</option>`).join('')}</select>`:''}</div>`;
+  h+=`<div style="font-size:11px;color:var(--mu);margin-bottom:10px">☑ 체크 = 제외(줄 긋기) · 비고는 수기입력 탭과 양방향 sync · 엑셀 다운로드 시 제외 항목엔 취소선 적용</div>`;
   if(!_ws.length)return h+`<div class="empty">산출된 장학생이 없습니다.</div>`;
   h+=`<div class="card"><div class="tw"><table class="t"><thead><tr><th>제외</th><th>장학명</th><th>혜택</th><th>반</th><th>번호</th><th>이름</th><th>계열</th><th>환산/향상</th><th>기존장학</th><th>중복</th><th style="min-width:120px">비고</th></tr></thead><tbody>`;
+  let visibleCount=0;
   _ws.forEach((w,i)=>{
     const k=wkey(w);const ex=S.excluded.has(k);
+    // 토글에 따라 제외 항목 숨김
+    if(ex&&!_finalShowExcluded)return;
+    visibleCount++;
     const dup=w.dup?.length?`<span class="dup">중복</span>`:'';
     const dupFull=w.dup?.length?w.dup.slice(0,1).join('')+(w.dup.length>1?'외':''):'–';
     const _exg=S.exMap[String(w.번호)]||w.기존장학||'';const exg=_exg?`<span class="bx bq">${_exg}</span>`:'–';
-    h+=`<tr class="${ex?'ex':''}"><td><input type="checkbox" ${ex?'checked':''} onchange="toggleExcl(${i})"></td><td><span class="bx ${w.bc}">${w.lbl}</span></td><td style="font-size:11px;color:var(--mu)">${w.혜택}</td><td>${w.반?w.반+'반':''}</td><td class="nn">${w.번호||'–'}</td><td class="nm"><span class="name-link" onclick="showStudentDetail('${w.번호}','${w.이름}')">${w.이름}</span>${dup}</td><td>${w.계열||'–'}</td><td class="nn">${w.val}</td><td>${exg}</td><td style="font-size:11px;color:${w.dup?.length?'var(--red)':'var(--mu)'}">${dupFull}</td><td><input class="fi" style="width:110px;font-size:11px" placeholder="비고..." value="${(S.remarks[k]||'').replace(/"/g,'&quot;')}" oninput="updRemark(${i},this.value)"></td></tr>`;
+    // 비고: S.remarks 우선, 없으면 수기 entry 의 manualNote fallback
+    const noteVal=S.remarks[k]!==undefined?S.remarks[k]:(w.manualNote||'');
+    h+=`<tr class="${ex?'ex':''}"><td><input type="checkbox" ${ex?'checked':''} onchange="toggleExcl(${i})"></td><td><span class="bx ${w.bc}">${w.lbl}</span></td><td style="font-size:11px;color:var(--mu)">${w.혜택}</td><td>${w.반?w.반+'반':''}</td><td class="nn">${w.번호||'–'}</td><td class="nm"><span class="name-link" onclick="showStudentDetail('${w.번호}','${w.이름}')">${w.이름}</span>${dup}</td><td>${w.계열||'–'}</td><td class="nn">${w.val}</td><td>${exg}</td><td style="font-size:11px;color:${w.dup?.length?'var(--red)':'var(--mu)'}">${dupFull}</td><td><input class="fi" style="width:110px;font-size:11px" placeholder="비고..." value="${String(noteVal).replace(/"/g,'&quot;')}" oninput="updRemark(${i},this.value)"></td></tr>`;
   });
+  if(!visibleCount){h+=`<tr><td colspan="11" class="empty" style="padding:14px">${_finalShowExcluded?'표시할 항목 없음':'모든 항목이 제외 상태입니다. 토글 버튼으로 표시 가능'}</td></tr>`;}
   h+=`</tbody></table></div></div>`;return h;
 }
 function toggleAllSort(col){

@@ -6,7 +6,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.full.min.js"></script>
 <style>
 :root{
   --bg:#f9f9f7;--bg2:#ffffff;--bg3:#f0efe9;--bg4:#e8e7e0;
@@ -230,6 +230,8 @@ let _allSort={col:'환산',dir:'desc'};
 let _allFilter={q:'',kye:''};
 // 최종명단: 제외 항목 보이기 토글 (기본 false: 숨김)
 let _finalShowExcluded=false;
+// 백그라운드 로딩 상태 (과거 월 데이터)
+let _bgLoading=false;
 function initManual(){Object.keys(SCONF.manual).forEach(id=>{if(!S.manual[id]||!S.manual[id].length)S.manual[id]=[erow(id)];});}
 function erow(id){const r={};(SCONF.manual[id]?.cols||[]).forEach(c=>r[c]='');return r;}
 function mkey(){return`${S.curYear}-${S.curMonth.padStart(2,'0')}`;}
@@ -263,14 +265,15 @@ async function loadAll(){
       if(sv.auto)Object.keys(sv.auto).forEach(k=>{if(SCONF.auto[k])Object.assign(SCONF.auto[k],sv.auto[k]);});
       if(sv.manual)Object.keys(sv.manual).forEach(k=>{if(SCONF.manual[k])Object.assign(SCONF.manual[k],sv.manual[k]);});
     }
-    setLoadSub('월별 데이터 가져오는 중... (데이터 양에 따라 몇 초 걸릴 수 있습니다)');
-    const snap=await db.collection('quetta_data').get();
-    setLoadSub(`${snap.size}개월 데이터 정리 중...`);
-    S.accumulated={};S.allStudentsData={};
-    snap.forEach(doc=>{const d=doc.data();S.accumulated[doc.id]=d;if(d.allStudents)S.allStudentsData[doc.id]=d.allStudents;});
+    // ─── 1단계: 이번달 데이터만 우선 가져오기 (메인 화면 빨리 띄우기 위함) ───
+    setLoadSub('이번달 데이터 가져오는 중...');
     const mk=mkey();
-    if(S.accumulated[mk]){
-      const d=S.accumulated[mk];
+    S.accumulated={};S.allStudentsData={};
+    const curDoc=await db.collection('quetta_data').doc(mk).get();
+    if(curDoc.exists){
+      const d=curDoc.data();
+      S.accumulated[mk]=d;
+      if(d.allStudents)S.allStudentsData[mk]=d.allStudents;
       if(d.manual)Object.keys(SCONF.manual).forEach(id=>{if(d.manual[id])S.manual[id]=d.manual[id];});
       if(d.excluded)S.excluded=new Set(d.excluded);
       if(d.remarks)S.remarks=d.remarks;
@@ -279,7 +282,27 @@ async function loadAll(){
     initManual();
     restoreCurrentMonthFromSaved();
     setLoadSub('완료');
-    setSyncMsg('✓ 로드 완료 ('+snap.size+'개월)');
+    setSyncMsg('✓ 이번달 로드 완료 · 과거 데이터 백그라운드 중...');
+    // ─── 2단계: 나머지 월 데이터 백그라운드 (await 안 함, 메인 화면 먼저 표시) ───
+    _bgLoading=true;
+    (async()=>{
+      try{
+        const snap=await db.collection('quetta_data').get();
+        snap.forEach(doc=>{
+          if(doc.id===mk)return; // 이번달은 이미 로드됨
+          const d=doc.data();
+          S.accumulated[doc.id]=d;
+          if(d.allStudents)S.allStudentsData[doc.id]=d.allStudents;
+        });
+        _bgLoading=false;
+        setSyncMsg(`✓ 전체 로드 완료 (${snap.size}개월)`);
+        // 누적 데이터 보는 탭에 있으면 자동 갱신
+        if(['stats','allstudents','final'].includes(S.tab))render();
+      }catch(e){
+        _bgLoading=false;
+        setSyncMsg('⚠ 과거 데이터 로드 실패: '+e.message);
+      }
+    })();
   }catch(e){
     setLoadSub('⚠ 오류: '+e.message);
     setSyncMsg('⚠ 로드 실패: '+e.message);
@@ -860,6 +883,7 @@ function pgAll(){
   const months=Object.keys(S.accumulated).sort();
   const avail=months.filter(k=>S.allStudentsData[k]||S.accumulated[k]?.allStudents);
   let h=`<div class="ph"><h2>전체 명단</h2><p>월별 전체 학생 성적 상세 조회 <span class="dim" style="margin-left:6px">· 이름 클릭 → 상세 모달 · 헤더 클릭 → 정렬</span></p></div>`;
+  if(_bgLoading)h+=`<div class="notice">⏳ 과거 데이터 백그라운드 로딩 중... 잠시 후 자동 갱신됩니다.</div>`;
   const mk=S.allViewMonth||(avail.includes(mkey())?mkey():avail.slice(-1)[0]||mkey());
   h+=`<div class="btn-row"><select class="fi" onchange="S.allViewMonth=this.value||null;render()"><option value="">— 월 선택 —</option>${avail.slice().reverse().map(k=>`<option value="${k}"${k===mk?' selected':''}>${fullLbl(k)}</option>`).join('')}</select></div>`;
   const students=S.allStudentsData[mk]||S.accumulated[mk]?.allStudents||(mk===mkey()?S.curStudents:null);
@@ -993,6 +1017,7 @@ function isBillboard(w){return BILL_IDS.some(id=>SCONF.manual[id]&&w.lbl===SCONF
 
 function pgStats(){
   let h=`<div class="ph"><h2>통계 & 누적</h2><p>반별 성적 추이 · 장학 인원 통계 · 학생별 수상 이력 <span class="dim" style="margin-left:8px">· 평균은 국/수/탐1/탐2 + 영어 응시자만 집계</span></p></div>`;
+  if(_bgLoading)h+=`<div class="notice">⏳ 과거 데이터 백그라운드 로딩 중... 잠시 후 자동 갱신됩니다.</div>`;
   const months=Object.keys(S.accumulated).sort();
   if(!months.length)return h+`<div class="notice">저장된 데이터가 없습니다. 최종 명단 탭에서 "이번달 저장"을 눌러 데이터를 쌓으세요.</div>`;
 

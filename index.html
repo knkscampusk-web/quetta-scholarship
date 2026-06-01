@@ -622,7 +622,7 @@ function showStudentDetail(번호,이름,mk){
   html+=`</tbody></table></div>`;
   // 해당 학생의 기존장학 / 수상 정보
   const ex_=mk===mkey()?S.exMap[String(번호)]:'';
-  const monthWinners=(S.accumulated[mk]?.winners||[]).filter(w=>String(w.번호)===String(번호)&&!w.excluded);
+  const monthWinners=getWinnersFromSaved(S.accumulated[mk]).filter(w=>String(w.번호)===String(번호)&&!w.excluded);
   if(ex_||monthWinners.length){
     html+=`<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bo2)">`;
     if(ex_)html+=`<div style="font-size:11px;color:var(--mu);margin-bottom:4px">기존 장학</div><div style="margin-bottom:8px"><span class="bx bq">${ex_}</span></div>`;
@@ -638,7 +638,7 @@ function showStudentDetail(번호,이름,mk){
 
 // 통계 셀 클릭: 빌보드 (월×반×계열)
 function showBillboardCell(mk,ban,kye){
-  const ws=(S.accumulated[mk]?.winners||[]).filter(w=>!w.excluded&&isBillboard(w)&&String(w.반)===ban&&getWinnerKye(w)===kye);
+  const ws=getWinnersFromSaved(S.accumulated[mk]).filter(w=>!w.excluded&&isBillboard(w)&&String(w.반)===ban&&getWinnerKye(w)===kye);
   const allStus=S.allStudentsData[mk]||S.accumulated[mk]?.allStudents||[];
   if(!ws.length){showModal(`${fullLbl(mk)} · ${BAN_CODE[ban]||ban}반 ${kye}`,'<div class="empty">해당 학생 없음</div>');return;}
   let html=`<div class="tw"><table class="t"><thead><tr><th>장학명</th><th>학번</th><th>이름</th><th class="num">환산</th><th>비고</th></tr></thead><tbody>`;
@@ -669,7 +669,7 @@ function getSchTypeRows(){
 }
 function showSchTypeCell(mk,schKey){
   const row=getSchTypeRows().find(r=>r.key===schKey);if(!row)return;
-  const ws=(S.accumulated[mk]?.winners||[]).filter(w=>!w.excluded&&row.match(w));
+  const ws=getWinnersFromSaved(S.accumulated[mk]).filter(w=>!w.excluded&&row.match(w));
   const allStus=S.allStudentsData[mk]||S.accumulated[mk]?.allStudents||[];
   if(!ws.length){showModal(`${fullLbl(mk)} · ${row.lbl}`,'<div class="empty">해당 학생 없음</div>');return;}
   let html=`<div class="tw"><table class="t"><thead><tr><th>반</th><th>학번</th><th>이름</th><th>계열</th><th class="num">환산</th><th>비고</th></tr></thead><tbody>`;
@@ -822,7 +822,7 @@ function pgManual(){
 function pgFinal(){
   const months=Object.keys(S.accumulated).sort();const pastMonths=months.filter(k=>k!==mkey());
   if(S.finalViewMonth&&S.accumulated[S.finalViewMonth]){
-    const d=S.accumulated[S.finalViewMonth];const winners=d.winners||[];const act=winners.filter(w=>!w.excluded).length;const exCnt=winners.filter(w=>w.excluded).length;
+    const d=S.accumulated[S.finalViewMonth];const winners=getWinnersFromSaved(d);const act=winners.filter(w=>!w.excluded).length;const exCnt=winners.filter(w=>w.excluded).length;
     let h=`<div class="ph"><h2>최종 명단</h2><p>${fullLbl(S.finalViewMonth)} 저장본 (읽기 전용)</p></div>`;
     const toggleLbl=_finalShowExcluded?'👁 제외 항목 표시 중':'🚫 제외 항목 숨김';
     const toggleCls=_finalShowExcluded?'btn-b':'btn';
@@ -896,7 +896,7 @@ function pgAll(){
   // 기존장학 매칭
   const exgMap={};
   if(mk===mkey()){Object.assign(exgMap,S.exMap);}
-  (S.accumulated[mk]?.winners||[]).forEach(w=>{if(w.기존장학&&!exgMap[String(w.번호)])exgMap[String(w.번호)]=w.기존장학;});
+  getWinnersFromSaved(S.accumulated[mk]).forEach(w=>{if(w.기존장학&&!exgMap[String(w.번호)])exgMap[String(w.번호)]=w.기존장학;});
 
   // 향상 점수 계산 헬퍼 (정렬용)
   const calcMi=s=>{const p=prevMap[String(s.번호)];if(!p||p.수학백분<=0)return null;return s.수학백분-p.수학백분;};
@@ -1015,6 +1015,44 @@ function getWinnerKye(w){if(w.계열)return w.계열;if(w.lbl.includes('인문')
 const BILL_IDS=['billboard_in','billboard_nat','honor_in','honor_nat'];
 function isBillboard(w){return BILL_IDS.some(id=>SCONF.manual[id]&&w.lbl===SCONF.manual[id].lbl);}
 
+// 저장된 데이터에서 완전한 winners 리스트 재구성:
+// d.winners 우선 사용 + d.manual 의 entries 중 winners에 없는 항목은 보강 (저장 타이밍 차이 보완)
+function getWinnersFromSaved(d){
+  if(!d)return[];
+  const result=[];const seen=new Set();
+  if(d.winners?.length){
+    d.winners.forEach(w=>{
+      result.push(w);
+      seen.add(`${w.lbl}::${w.이름}`);
+    });
+  }
+  // manual 필드에서 누락된 수기 entries 보강
+  if(d.manual){
+    const excludedSet=new Set(d.excluded||[]);
+    ACTIVE_MANUAL.forEach(id=>{
+      const mc=SCONF.manual[id];
+      if(!mc)return;
+      (d.manual[id]||[]).forEach(row=>{
+        if(!row.이름)return;
+        const key=`${mc.lbl}::${row.이름}`;
+        if(seen.has(key))return;
+        seen.add(key);
+        const wkey_=row.이름+'::'+mc.lbl;
+        result.push({
+          lbl:mc.lbl,bc:mc.bc,혜택:mc.혜택,
+          반:row.반||'',번호:row.학번||'',이름:row.이름,
+          계열:row.계열||'',val:row.환산점수||'',
+          type:'manual',
+          기존장학:d.exMap?.[String(row.학번)]||'',
+          비고:row.비고||(d.remarks?.[wkey_]||''),
+          excluded:excludedSet.has(wkey_),
+        });
+      });
+    });
+  }
+  return result;
+}
+
 function pgStats(){
   let h=`<div class="ph"><h2>통계 & 누적</h2><p>반별 성적 추이 · 장학 인원 통계 · 학생별 수상 이력 <span class="dim" style="margin-left:8px">· 평균은 국/수/탐1/탐2 + 영어 응시자만 집계</span></p></div>`;
   if(_bgLoading)h+=`<div class="notice">⏳ 과거 데이터 백그라운드 로딩 중... 잠시 후 자동 갱신됩니다.</div>`;
@@ -1054,7 +1092,7 @@ function pgStats(){
   BAN_LIST.forEach(ban=>{
     h+=`<tr><td class="lh">${BAN_CODE[ban]||ban}</td><td class="lh" style="color:var(--mu);font-size:11px">${ban}</td>`;
     months.forEach(k=>{
-      const ws=(S.accumulated[k].winners||[]).filter(w=>!w.excluded&&isBillboard(w));
+      const ws=getWinnersFromSaved(S.accumulated[k]).filter(w=>!w.excluded&&isBillboard(w));
       const inH=ws.filter(w=>String(w.반)===ban&&getWinnerKye(w)==='인문').length;
       const inN=ws.filter(w=>String(w.반)===ban&&getWinnerKye(w)==='자연').length;
       const ch=inH===0?'zero':'clickable';const cn=inN===0?'zero':'clickable';
@@ -1064,7 +1102,7 @@ function pgStats(){
     });h+=`</tr>`;
   });
   h+=`<tr><td class="tot-lh">계</td><td class="tot-lh" style="font-size:11px">전체</td>`;
-  months.forEach(k=>{const ws=(S.accumulated[k].winners||[]).filter(w=>!w.excluded&&isBillboard(w));const inH=ws.filter(w=>getWinnerKye(w)==='인문').length;const inN=ws.filter(w=>getWinnerKye(w)==='자연').length;h+=`<td class="tot">${inH}</td><td class="tot">${inN}</td>`;});
+  months.forEach(k=>{const ws=getWinnersFromSaved(S.accumulated[k]).filter(w=>!w.excluded&&isBillboard(w));const inH=ws.filter(w=>getWinnerKye(w)==='인문').length;const inN=ws.filter(w=>getWinnerKye(w)==='자연').length;h+=`<td class="tot">${inH}</td><td class="tot">${inN}</td>`;});
   h+=`</tr></tbody></table></div></div>`;
 
   // ── 표3: 장학 종류별 인원
@@ -1074,7 +1112,7 @@ function pgStats(){
   schRows.forEach(({key,lbl,match})=>{
     h+=`<tr><td class="lh">${lbl}</td>`;
     months.forEach(k=>{
-      const ws=(S.accumulated[k].winners||[]).filter(w=>!w.excluded);const cnt=ws.filter(match).length;
+      const ws=getWinnersFromSaved(S.accumulated[k]).filter(w=>!w.excluded);const cnt=ws.filter(match).length;
       const cls=cnt===0?'zero':'clickable';
       const oc=cnt>0?`onclick="showSchTypeCell('${k}','${key}')"`:'';
       h+=`<td class="${cls}" ${oc}>${cnt||'–'}</td>`;
@@ -1082,14 +1120,14 @@ function pgStats(){
     h+=`</tr>`;
   });
   h+=`<tr><td class="tot-lh">계</td>`;
-  months.forEach(k=>{const ws=(S.accumulated[k].winners||[]).filter(w=>!w.excluded);h+=`<td class="tot">${ws.length}</td>`;});
+  months.forEach(k=>{const ws=getWinnersFromSaved(S.accumulated[k]).filter(w=>!w.excluded);h+=`<td class="tot">${ws.length}</td>`;});
   h+=`</tr></tbody></table></div></div>`;
 
   // ── 학생별 수상이력 (정렬 가능)
   h+=`<div class="sec-title">📋 학생별 수상 이력 <span class="dim" style="font-weight:400;font-size:11px;margin-left:6px">헤더 클릭 → 정렬 · 이름 클릭 → 상세 성적</span></div>`;
   const stuMap={};
   months.forEach(k=>{
-    (S.accumulated[k].winners||[]).filter(w=>!w.excluded).forEach(w=>{
+    getWinnersFromSaved(S.accumulated[k]).filter(w=>!w.excluded).forEach(w=>{
       const key=String(w.번호||w.이름);
       if(!stuMap[key])stuMap[key]={반:w.반,학번:w.번호||'',이름:w.이름,months:{}};
       const abbrev=w.혜택==='식비 100%'?'식비100%':w.혜택==='식비 50%'?'식비50%':w.혜택?.includes('독서실비')?'독서실비100%':w.혜택?.includes('교습비')?'교습비100%':'매점5만';

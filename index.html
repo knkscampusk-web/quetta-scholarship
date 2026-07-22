@@ -6,7 +6,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <style>
 :root{
   --bg:#f9f9f7;--bg2:#ffffff;--bg3:#f0efe9;--bg4:#e8e7e0;
@@ -844,9 +844,11 @@ function pgFinal(){
   _ws=getAllWinners();
   const act=_ws.filter((_,i)=>!S.excluded.has(wkey(_ws[i]))).length;
   let h=`<div class="ph"><h2>최종 명단</h2><p>${S.curYear}년 ${S.curMonth}월 · 총 ${_ws.length}건 | 제외 ${S.excluded.size}건 | 최종 ${act}건</p></div>`;
+  if(_bgLoading)h+=`<div class="notice">⏳ 과거 데이터 백그라운드 로딩 중... 잠시 후 지난달 조회가 활성화됩니다.</div>`;
   const toggleLbl=_finalShowExcluded?'👁 제외 항목 표시 중':'🚫 제외 항목 숨김';
   const toggleCls=_finalShowExcluded?'btn-b':'btn';
-  h+=`<div class="btn-row"><button class="btn btn-g" onclick="exportExcel()">⬇ 엑셀 다운로드</button><button class="btn btn-gr" onclick="saveToFirestore().then(()=>render())">☁ 이번달 저장</button><button class="${toggleCls}" onclick="_finalShowExcluded=!_finalShowExcluded;render()">${toggleLbl}</button>${pastMonths.length?`<select class="fi" style="margin-left:auto" onchange="if(this.value){S.finalViewMonth=this.value;render();}this.value=''"><option value="">📅 지난달 명단 조회...</option>${pastMonths.slice().reverse().map(k=>`<option value="${k}">${fullLbl(k)}</option>`).join('')}</select>`:''}</div>`;
+  const dropdown=_bgLoading?`<span class="dim" style="margin-left:auto;font-size:11px">지난달 조회 로딩 중...</span>`:(pastMonths.length?`<select class="fi" style="margin-left:auto" onchange="if(this.value){S.finalViewMonth=this.value;render();}this.value=''"><option value="">📅 지난달 명단 조회...</option>${pastMonths.slice().reverse().map(k=>`<option value="${k}">${fullLbl(k)}</option>`).join('')}</select>`:'');
+  h+=`<div class="btn-row"><button class="btn btn-g" onclick="exportExcel()">⬇ 엑셀 다운로드</button><button class="btn btn-gr" onclick="saveToFirestore().then(()=>render())">☁ 이번달 저장</button><button class="${toggleCls}" onclick="_finalShowExcluded=!_finalShowExcluded;render()">${toggleLbl}</button>${dropdown}</div>`;
   h+=`<div style="font-size:11px;color:var(--mu);margin-bottom:10px">☑ 체크 = 제외(줄 긋기) · 비고는 수기입력 탭과 양방향 sync · 엑셀 다운로드 시 제외 항목엔 취소선 적용</div>`;
   if(!_ws.length)return h+`<div class="empty">산출된 장학생이 없습니다.</div>`;
   h+=`<div class="card"><div class="tw"><table class="t"><thead><tr><th>제외</th><th>장학명</th><th>혜택</th><th>반</th><th>번호</th><th>이름</th><th>계열</th><th>환산/향상</th><th>기존장학</th><th>중복</th><th style="min-width:120px">비고</th></tr></thead><tbody>`;

@@ -653,7 +653,7 @@ function showBillboardCell(mk,ban,kye){
 
 // 통계 셀 클릭: 장학 종류별
 function getSchTypeRows(){
-  return[
+  const rows=[
     {key:'dasung_in',lbl:SCONF.manual.dasung_in.lbl,match:w=>w.lbl===SCONF.manual.dasung_in.lbl},
     {key:'dasung_nat',lbl:SCONF.manual.dasung_nat.lbl,match:w=>w.lbl===SCONF.manual.dasung_nat.lbl},
     {key:'d1',lbl:SCONF.auto.d1.lbl,match:w=>w.lbl===SCONF.auto.d1.lbl},
@@ -666,8 +666,21 @@ function getSchTypeRows(){
     {key:'honor_in',lbl:SCONF.manual.honor_in.lbl,match:w=>w.lbl===SCONF.manual.honor_in.lbl},
     {key:'honor_nat',lbl:SCONF.manual.honor_nat.lbl,match:w=>w.lbl===SCONF.manual.honor_nat.lbl},
   ];
+  // 저장된 데이터에서 위 rows에 매칭 안 되는 lbl 자동 감지 → extraRows 추가
+  const extraLbls=new Set();
+  Object.values(S.accumulated||{}).forEach(d=>{
+    getWinnersFromSaved(d).filter(w=>!w.excluded).forEach(w=>{
+      if(!rows.some(r=>r.match(w)))extraLbls.add(w.lbl);
+    });
+  });
+  [...extraLbls].sort((a,b)=>a.localeCompare(b,'ko')).forEach(lbl=>{
+    rows.push({key:lbl,lbl:lbl+' *',match:(w)=>w.lbl===lbl,extra:true});
+  });
+  return rows;
 }
 function showSchTypeCell(mk,schKey){
+  // encoded key 처리
+  try{schKey=decodeURIComponent(schKey);}catch(e){}
   const row=getSchTypeRows().find(r=>r.key===schKey);if(!row)return;
   const ws=getWinnersFromSaved(S.accumulated[mk]).filter(w=>!w.excluded&&row.match(w));
   const allStus=S.allStudentsData[mk]||S.accumulated[mk]?.allStudents||[];
@@ -1110,20 +1123,21 @@ function pgStats(){
   // ── 표3: 장학 종류별 인원
   h+=`<div class="sec-title">🏆 장학 종류별 수여 인원 <span class="dim" style="font-weight:400;font-size:11px;margin-left:6px">셀 클릭 → 학생 정보</span></div>`;
   const schRows=getSchTypeRows();
+  const hasExtras=schRows.some(r=>r.extra);
   h+=`<div class="card"><div class="tw"><table class="stat-t"><thead><tr><th class="lh">장학</th>${mhdrShort}</tr></thead><tbody>`;
-  schRows.forEach(({key,lbl,match})=>{
-    h+=`<tr><td class="lh">${lbl}</td>`;
+  schRows.forEach(({key,lbl,match,extra})=>{
+    h+=`<tr><td class="lh"${extra?' style="color:var(--mu)"':''}>${lbl}</td>`;
     months.forEach(k=>{
       const ws=getWinnersFromSaved(S.accumulated[k]).filter(w=>!w.excluded);const cnt=ws.filter(match).length;
       const cls=cnt===0?'zero':'clickable';
-      const oc=cnt>0?`onclick="showSchTypeCell('${k}','${key}')"`:'';
+      const oc=cnt>0?`onclick="showSchTypeCell('${k}','${encodeURIComponent(key)}')"`:'';
       h+=`<td class="${cls}" ${oc}>${cnt||'–'}</td>`;
     });
     h+=`</tr>`;
   });
   h+=`<tr><td class="tot-lh">계</td>`;
   months.forEach(k=>{const ws=getWinnersFromSaved(S.accumulated[k]).filter(w=>!w.excluded);h+=`<td class="tot">${ws.length}</td>`;});
-  h+=`</tr></tbody></table></div></div>`;
+  h+=`</tr></tbody></table>${hasExtras?'<div style="padding:8px 12px;font-size:10px;color:var(--mu);border-top:1px solid var(--bo2)">* 자동 감지된 항목 — 설정에 등록되지 않은 장학명 또는 옛 저장본 데이터</div>':''}</div></div>`;
 
   // ── 학생별 수상이력 (정렬 가능)
   h+=`<div class="sec-title">📋 학생별 수상 이력 <span class="dim" style="font-weight:400;font-size:11px;margin-left:6px">헤더 클릭 → 정렬 · 이름 클릭 → 상세 성적</span></div>`;

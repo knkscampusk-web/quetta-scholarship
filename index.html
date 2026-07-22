@@ -659,7 +659,7 @@ function getSchTypeRows(){
     {key:'d1',lbl:SCONF.auto.d1.lbl,match:w=>w.lbl===SCONF.auto.d1.lbl},
     {key:'d2',lbl:SCONF.auto.d2.lbl,match:w=>w.lbl===SCONF.auto.d2.lbl},
     {key:'qt',lbl:SCONF.auto.qt.lbl,match:w=>w.lbl===SCONF.auto.qt.lbl},
-    {key:'math',lbl:'각 수학반 1등',match:w=>w.lbl.startsWith(SCONF.auto.math.lbl)},
+    {key:'math',lbl:'각 수학반 1등',match:w=>/\(\d+반\)$/.test(w.lbl)&&(w.lbl.includes('수학')||w.lbl.includes('1등')||w.lbl.includes('1위'))},
     {key:'mi',lbl:SCONF.auto.mi.lbl,match:w=>w.lbl===SCONF.auto.mi.lbl},
     {key:'ti',lbl:SCONF.auto.ti.lbl,match:w=>w.lbl===SCONF.auto.ti.lbl},
     {key:'improve',lbl:SCONF.manual.improve_gift.lbl,match:w=>w.lbl===SCONF.manual.improve_gift.lbl},

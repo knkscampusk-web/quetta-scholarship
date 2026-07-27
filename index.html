@@ -137,6 +137,9 @@ input[type=checkbox]{cursor:pointer;accent-color:var(--gold);width:13px;height:1
 .sort-h{cursor:pointer;user-select:none}
 .sort-h:hover{background:var(--bg4)}
 .sort-h .arr{color:var(--amber);font-size:10px;margin-left:2px}
+.lbl-edit{border:1px dashed rgba(0,0,0,.15);background:transparent;font-family:inherit;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:500;min-width:100px;width:auto;transition:all .12s}
+.lbl-edit:hover{background:rgba(255,255,255,.5);border-style:solid}
+.lbl-edit:focus{outline:none;background:var(--bg2);border-color:var(--gold);box-shadow:0 0 0 2px rgba(181,104,30,.15)}
 .loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:65vh;color:var(--mu);font-size:14px;text-align:center;padding:40px 20px}
 .loading-spinner{width:38px;height:38px;border:3px solid var(--bo);border-top-color:var(--gold);border-radius:50%;animation:qspin 0.8s linear infinite;margin-bottom:16px}
 @keyframes qspin{to{transform:rotate(360deg)}}
@@ -206,9 +209,10 @@ let SCONF={
     honor_in:{lbl:'성적우수자 (인문)',혜택:'매점상품권 5만원권',bc:'bb',multi:true,cols:['반','학번','이름','환산점수','비고']},
     honor_nat:{lbl:'성적우수자 (자연)',혜택:'매점상품권 5만원권',bc:'bb',multi:true,cols:['반','학번','이름','환산점수','비고']},
     improve_gift:{lbl:'성적 향상',혜택:'매점상품권 5만원권',bc:'bg',multi:true,cols:['반','학번','이름','비고']},
+    custom:{lbl:'직접 입력',혜택:'',bc:'bq',multi:true,cols:['반','학번','이름','장학명','혜택','환산점수','비고'],isCustom:true},
   }
 };
-const ACTIVE_MANUAL=['dasung_in','dasung_nat','honor_in','honor_nat'];
+const ACTIVE_MANUAL=['dasung_in','dasung_nat','honor_in','honor_nat','custom'];
 const _now=new Date();
 let S={
   tab:'results',
@@ -220,6 +224,7 @@ let S={
   curFile:null,prevFile:null,exFile:null,
   exMap:{},results:null,manual:{},
   excluded:new Set(),remarks:{},
+  customLbls:{},  // 사용자 지정 장학명 (최종명단에서 수정 가능): {wkey: 새 lbl}
   accumulated:{},allStudentsData:{},
   finalViewMonth:null,allViewMonth:null,
   dbg:'',err:null,syncMsg:'',userEmail:'',
@@ -297,6 +302,7 @@ async function loadAll(){
       if(d.excluded)S.excluded=new Set(d.excluded);
       if(d.remarks)S.remarks=d.remarks;
       if(d.시험종류)S.시험종류=d.시험종류;
+      if(d.customLbls)S.customLbls=d.customLbls;
     }
     initManual();
     restoreCurrentMonthFromSaved();
@@ -350,6 +356,7 @@ async function saveToFirestore(){
       winners:ws.map(w=>({...w,excluded:S.excluded.has(wkey(w)),기존장학:S.exMap[String(w.번호)]||w.기존장학||'',비고:S.remarks[wkey(w)]||''})),
       classStats:calcClassStats(),overallAvg:overallAvg(),
       manual:S.manual,excluded:[...S.excluded],remarks:S.remarks,
+      customLbls:S.customLbls||{},
       allStudents:S.curStudents||S.allStudentsData[mk]||null,
       exMap:S.exMap||{},exFile:S.exFile||'',
       results:S.results||null,
@@ -364,8 +371,18 @@ async function autoSaveManual(){
   clearTimeout(window._ast);
   window._ast=setTimeout(async()=>{
     const mk=mkey();
-    try{await db.collection('quetta_data').doc(mk).set({manual:S.manual,excluded:[...S.excluded],remarks:S.remarks},{merge:true});setSyncMsg('✓ 자동저장');}catch(e){}
+    try{await db.collection('quetta_data').doc(mk).set({manual:S.manual,excluded:[...S.excluded],remarks:S.remarks,customLbls:S.customLbls||{}},{merge:true});setSyncMsg('✓ 자동저장');}catch(e){}
   },800);
+}
+async function toggleStatsExcluded(mk){
+  if(!S.accumulated[mk])return;
+  S.accumulated[mk].excludeFromStats=!S.accumulated[mk].excludeFromStats;
+  setSyncMsg('저장 중...');
+  try{
+    await db.collection('quetta_data').doc(mk).set({excludeFromStats:S.accumulated[mk].excludeFromStats},{merge:true});
+    setSyncMsg(S.accumulated[mk].excludeFromStats?'✓ 통계 제외 설정':'✓ 통계 포함 설정');
+    render();
+  }catch(e){setSyncMsg('⚠ 저장 실패: '+e.message);S.accumulated[mk].excludeFromStats=!S.accumulated[mk].excludeFromStats;render();}
 }
 async function saveSettings(){
   setSyncMsg('설정 저장 중...');
@@ -383,13 +400,14 @@ async function loadMonthData(){
   S.excluded=new Set();S.remarks={};S.monthConfirmed=false;S.finalViewMonth=null;
   // 작업 상태 초기화 (월이 바뀌었으니 현재 메모리의 학생 명단 비움)
   S.curStudents=null;S.prevStudents=null;S.curFile=null;S.prevFile=null;S.results=null;
-  S.exMap={};S.exFile=null;
+  S.exMap={};S.exFile=null;S.customLbls={};
   if(S.accumulated[mk]){
     const d=S.accumulated[mk];
     if(d.manual)Object.keys(SCONF.manual).forEach(id=>{if(d.manual[id])S.manual[id]=d.manual[id];});
     if(d.excluded)S.excluded=new Set(d.excluded);
     if(d.remarks)S.remarks=d.remarks;
     if(d.시험종류)S.시험종류=d.시험종류;
+    if(d.customLbls)S.customLbls=d.customLbls;
   }
   // 새 월의 저장본 자동 복원 (exMap 포함)
   restoreCurrentMonthFromSaved();
@@ -511,8 +529,19 @@ function getAllWinners(){
     const mc=SCONF.manual[id];
     (S.manual[id]||[]).forEach((row,ri)=>{
       if(!row.이름)return;
-      ws.push({lbl:mc.lbl,bc:mc.bc,혜택:mc.혜택,반:row.반||'',번호:row.학번||'',이름:row.이름,계열:row.계열||'',val:row.환산점수||'',type:'manual',기존장학:S.exMap[String(row.학번)]||'',dup:[],manualSchId:id,manualRi:ri,manualNote:row.비고||''});
+      // 직접 입력 (custom) 은 lbl/혜택을 row 에서
+      if(mc.isCustom){
+        if(!row.장학명)return;
+        ws.push({lbl:row.장학명,bc:mc.bc,혜택:row.혜택||'',반:row.반||'',번호:row.학번||'',이름:row.이름,계열:row.계열||'',val:row.환산점수||'',type:'manual',기존장학:S.exMap[String(row.학번)]||'',dup:[],manualSchId:id,manualRi:ri,manualNote:row.비고||'',isCustom:true});
+      } else {
+        ws.push({lbl:mc.lbl,bc:mc.bc,혜택:mc.혜택,반:row.반||'',번호:row.학번||'',이름:row.이름,계열:row.계열||'',val:row.환산점수||'',type:'manual',기존장학:S.exMap[String(row.학번)]||'',dup:[],manualSchId:id,manualRi:ri,manualNote:row.비고||''});
+      }
     });
+  });
+  // customLbls override 적용 (최종명단에서 사용자가 수정한 장학명)
+  ws.forEach(w=>{
+    const origKey=w.이름+'::'+w.lbl;
+    if(S.customLbls&&S.customLbls[origKey]){w._origLbl=w.lbl;w.lbl=S.customLbls[origKey];}
   });
   const nc={};ws.forEach(w=>nc[w.이름]=(nc[w.이름]||0)+1);
   ws.forEach(w=>{if(nc[w.이름]>1)w.dup=ws.filter(x=>x.이름===w.이름&&x.lbl!==w.lbl).map(x=>x.lbl);});
@@ -581,13 +610,44 @@ function renderStudentList(){
 }
 function addManualStudent(){
   const schId=document.getElementById('m-sch')?.value;if(!schId||!_mSel.size)return;
+  const isCustom=SCONF.manual[schId]?.isCustom;
+  let customLbl='',customBenefit='';
+  if(isCustom){
+    customLbl=(document.getElementById('m-custom-lbl')?.value||'').trim();
+    customBenefit=(document.getElementById('m-custom-benefit')?.value||'').trim();
+    if(!customLbl){alert('장학명을 입력해주세요.');return;}
+  }
   if(!S.manual[schId])S.manual[schId]=[];
-  const already=new Set((S.manual[schId]||[]).map(r=>String(r.학번)));
-  _mSel.forEach(i=>{const s=S.curStudents[i];if(already.has(String(s.번호)))return;S.manual[schId].push({반:s.반,학번:s.번호,이름:s.이름,계열:s.계열,환산점수:s.환산.toFixed(1),비고:''});});
-  _mSel=new Set();autoSaveManual();render();
+  const already=new Set((S.manual[schId]||[]).map(r=>String(r.학번)+'::'+(r.장학명||'')));
+  _mSel.forEach(i=>{
+    const s=S.curStudents[i];
+    const dupKey=String(s.번호)+'::'+customLbl;
+    if(isCustom&&already.has(dupKey))return;
+    if(!isCustom&&already.has(String(s.번호)+'::'))return;
+    const entry={반:s.반,학번:s.번호,이름:s.이름,계열:s.계열,환산점수:s.환산.toFixed(1),비고:''};
+    if(isCustom){entry.장학명=customLbl;entry.혜택=customBenefit;}
+    S.manual[schId].push(entry);
+  });
+  _mSel=new Set();
+  autoSaveManual();render();
 }
 function delManualStudent(schId,ri){S.manual[schId].splice(ri,1);autoSaveManual();render();}
 function toggleExcl(idx){const k=wkey(_ws[idx]);if(S.excluded.has(k))S.excluded.delete(k);else S.excluded.add(k);autoSaveManual();render();}
+function updCustomLbl(idx,newLbl){
+  const w=_ws[idx];
+  if(!w)return;
+  const origLbl=w._origLbl||w.lbl;
+  const origKey=w.이름+'::'+origLbl;
+  const trimmed=(newLbl||'').trim();
+  if(!trimmed||trimmed===origLbl){
+    // 원본과 같으면 override 제거
+    delete S.customLbls[origKey];
+  } else {
+    S.customLbls[origKey]=trimmed;
+  }
+  autoSaveManual();
+  render();
+}
 function updRemark(idx,val){
   const w=_ws[idx];const k=wkey(w);
   S.remarks[k]=val;
@@ -693,9 +753,10 @@ function getSchTypeRows(){
     {key:'honor_in',lbl:SCONF.manual.honor_in.lbl,match:w=>w.lbl===SCONF.manual.honor_in.lbl},
     {key:'honor_nat',lbl:SCONF.manual.honor_nat.lbl,match:w=>w.lbl===SCONF.manual.honor_nat.lbl},
   ];
-  // 저장된 데이터에서 위 rows에 매칭 안 되는 lbl 자동 감지 → extraRows 추가
+  // 저장된 데이터에서 위 rows에 매칭 안 되는 lbl 자동 감지 → extraRows 추가 (통계 제외 시험은 스캔 안 함)
   const extraLbls=new Set();
-  Object.values(S.accumulated||{}).forEach(d=>{
+  Object.entries(S.accumulated||{}).forEach(([mk,d])=>{
+    if(d.excludeFromStats)return;
     getWinnersFromSaved(d).filter(w=>!w.excluded).forEach(w=>{
       if(!rows.some(r=>r.match(w)))extraLbls.add(w.lbl);
     });
@@ -828,13 +889,19 @@ function pgManual(){
   h+=`<div class="card" style="margin-bottom:12px"><div class="ch"><span class="ct">장학생 추가</span><span class="cs">${hasStudents?S.curStudents.length+'명 로드됨':'성적 파일 미업로드'}</span></div>
   <div style="padding:12px 14px">
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
-      <select id="m-sch" class="fi" style="min-width:210px" onchange="updMAddBtn()">
+      <select id="m-sch" class="fi" style="min-width:210px" onchange="updMAddBtn();document.getElementById('m-custom-row').style.display=this.value==='custom'?'flex':'none'">
         <option value="">— 장학 종류 선택 —</option>
         <optgroup label="교습비 100%"><option value="dasung_in">${SCONF.manual.dasung_in.lbl}</option><option value="dasung_nat">${SCONF.manual.dasung_nat.lbl}</option></optgroup>
         <optgroup label="매점상품권 5만원권"><option value="honor_in">${SCONF.manual.honor_in.lbl}</option><option value="honor_nat">${SCONF.manual.honor_nat.lbl}</option></optgroup>
+        <optgroup label="직접 입력"><option value="custom">✏️ 직접 입력 (자유 기재)</option></optgroup>
       </select>
       <select id="m-filter-kye" class="fi" style="width:84px" onchange="renderStudentList()"><option value="">계열 전체</option><option value="인문">인문</option><option value="자연">자연</option></select>
       <div style="position:relative;flex:1;max-width:200px"><input class="fi" id="m-search" type="text" placeholder="이름, 반, 번호..." style="width:100%;padding-left:22px" oninput="renderStudentList()"><span style="position:absolute;left:7px;top:50%;transform:translateY(-50%);color:var(--mu);font-size:11px;pointer-events:none">🔍</span></div>
+    </div>
+    <div id="m-custom-row" style="display:none;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center;padding:8px 10px;background:rgba(181,104,30,.06);border:1px dashed rgba(181,104,30,.3);border-radius:6px">
+      <span style="font-size:11px;color:var(--gold2);font-weight:500">✏️ 직접 입력:</span>
+      <input class="fi" id="m-custom-lbl" type="text" placeholder="장학명 (예: 특별상)" style="flex:1;min-width:140px">
+      <input class="fi" id="m-custom-benefit" type="text" placeholder="혜택 (예: 도서상품권 3만원)" style="flex:1;min-width:140px">
     </div>`;
   if(!hasStudents){h+=`<div class="notice">자동 산출 탭에서 성적 파일을 업로드하면 학생 명단이 표시됩니다.</div>`;}
   else{
@@ -854,7 +921,12 @@ function pgManual(){
   if(!allEntries.length){h+=`<div class="empty">아직 추가된 학생이 없습니다</div>`;}
   else{
     h+=`<div class="tw"><table class="t"><thead><tr><th>장학명</th><th>혜택</th><th>반</th><th>번호</th><th>이름</th><th>계열</th><th>환산</th><th>비고</th><th></th></tr></thead><tbody>`;
-    allEntries.forEach(r=>{const def=SCONF.manual[r.schId];h+=`<tr><td><span class="bx ${def.bc}">${def.lbl}</span></td><td style="font-size:11px;color:var(--mu)">${def.혜택}</td><td>${r.반}반</td><td class="nn">${r.학번||''}</td><td class="nm">${r.이름}</td><td>${r.계열||'–'}</td><td class="nn">${r.환산점수||'–'}</td><td><input class="fi" style="width:100px" placeholder="비고" value="${(r.비고||'').replace(/"/g,'&quot;')}" oninput="updManualNote('${r.schId}',${r.ri},this.value)"></td><td><button class="rdel" onclick="delManualStudent('${r.schId}',${r.ri})">✕</button></td></tr>`;});
+    allEntries.forEach(r=>{
+      const def=SCONF.manual[r.schId];
+      const displayLbl=def.isCustom?(r.장학명||'(장학명 없음)'):def.lbl;
+      const displayBenefit=def.isCustom?(r.혜택||'–'):def.혜택;
+      h+=`<tr><td><span class="bx ${def.bc}">${displayLbl}</span>${def.isCustom?' <span class="dim" style="font-size:10px">(직접입력)</span>':''}</td><td style="font-size:11px;color:var(--mu)">${displayBenefit}</td><td>${r.반}반</td><td class="nn">${r.학번||''}</td><td class="nm">${r.이름}</td><td>${r.계열||'–'}</td><td class="nn">${r.환산점수||'–'}</td><td><input class="fi" style="width:100px" placeholder="비고" value="${(r.비고||'').replace(/"/g,'&quot;')}" oninput="updManualNote('${r.schId}',${r.ri},this.value)"></td><td><button class="rdel" onclick="delManualStudent('${r.schId}',${r.ri})">✕</button></td></tr>`;
+    });
     h+=`</tbody></table></div>`;
   }
   h+=`</div>`;return h;
@@ -903,7 +975,9 @@ function pgFinal(){
     const _exg=S.exMap[String(w.번호)]||w.기존장학||'';const exg=_exg?`<span class="bx bq">${_exg}</span>`:'–';
     // 비고: S.remarks 우선, 없으면 수기 entry 의 manualNote fallback
     const noteVal=S.remarks[k]!==undefined?S.remarks[k]:(w.manualNote||'');
-    h+=`<tr class="${ex?'ex':''}"><td><input type="checkbox" ${ex?'checked':''} onchange="toggleExcl(${i})"></td><td><span class="bx ${w.bc}">${w.lbl}</span></td><td style="font-size:11px;color:var(--mu)">${w.혜택}</td><td>${w.반?w.반+'반':''}</td><td class="nn">${w.번호||'–'}</td><td class="nm"><span class="name-link" onclick="showStudentDetail('${w.번호}','${w.이름}')">${w.이름}</span>${dup}</td><td>${w.계열||'–'}</td><td class="nn">${w.val}</td><td>${exg}</td><td style="font-size:11px;color:${w.dup?.length?'var(--red)':'var(--mu)'}">${dupFull}</td><td><input class="fi" style="width:110px;font-size:11px" placeholder="비고..." value="${String(noteVal).replace(/"/g,'&quot;')}" oninput="updRemark(${i},this.value)"></td></tr>`;
+    // 장학명 편집 가능한 input (뱃지 스타일 유지)
+    const lblCell=`<input class="lbl-edit bx ${w.bc}" value="${String(w.lbl).replace(/"/g,'&quot;')}" onchange="updCustomLbl(${i},this.value)" onblur="updCustomLbl(${i},this.value)" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.value='${String(w.lbl).replace(/'/g,"\\'")}';this.blur();}" title="클릭하여 장학명 수정">`;
+    h+=`<tr class="${ex?'ex':''}"><td><input type="checkbox" ${ex?'checked':''} onchange="toggleExcl(${i})"></td><td>${lblCell}</td><td style="font-size:11px;color:var(--mu)">${w.혜택}</td><td>${w.반?w.반+'반':''}</td><td class="nn">${w.번호||'–'}</td><td class="nm"><span class="name-link" onclick="showStudentDetail('${w.번호}','${w.이름}')">${w.이름}</span>${dup}</td><td>${w.계열||'–'}</td><td class="nn">${w.val}</td><td>${exg}</td><td style="font-size:11px;color:${w.dup?.length?'var(--red)':'var(--mu)'}">${dupFull}</td><td><input class="fi" style="width:110px;font-size:11px" placeholder="비고..." value="${String(noteVal).replace(/"/g,'&quot;')}" oninput="updRemark(${i},this.value)"></td></tr>`;
   });
   if(!visibleCount){h+=`<tr><td colspan="11" class="empty" style="padding:14px">${_finalShowExcluded?'표시할 항목 없음':'모든 항목이 제외 상태입니다. 토글 버튼으로 표시 가능'}</td></tr>`;}
   h+=`</tbody></table></div></div>`;return h;
@@ -1098,7 +1172,13 @@ function getWinnersFromSaved(d){
 function pgStats(){
   let h=`<div class="ph"><h2>통계 & 누적</h2><p>반별 성적 추이 · 장학 인원 통계 · 학생별 수상 이력 <span class="dim" style="margin-left:8px">· 평균은 국/수/탐1/탐2 + 영어 응시자만 집계</span></p></div>`;
   if(_bgLoading)h+=`<div class="notice">⏳ 과거 데이터 백그라운드 로딩 중... 잠시 후 자동 갱신됩니다.</div>`;
-  const months=Object.keys(S.accumulated).sort();
+  const allMonths=Object.keys(S.accumulated).sort();
+  // 통계 제외 설정된 시험은 표시/계산 대상에서 제외
+  const months=allMonths.filter(k=>!S.accumulated[k]?.excludeFromStats);
+  const excludedMonths=allMonths.filter(k=>S.accumulated[k]?.excludeFromStats);
+  if(excludedMonths.length){
+    h+=`<div class="notice" style="background:rgba(160,96,16,.06);border-color:rgba(160,96,16,.2);color:var(--amber)">📊 통계 제외 시험: ${excludedMonths.map(k=>fullLbl(k)).join(', ')} <span class="dim" style="font-size:11px;margin-left:6px">· 설정 탭에서 변경 가능</span></div>`;
+  }
   if(!months.length)return h+`<div class="notice">저장된 데이터가 없습니다. 최종 명단 탭에서 "이번달 저장"을 눌러 데이터를 쌓으세요.</div>`;
 
   // 월별 통계 재계산 (allStudents가 있으면 새 기준으로, 없으면 저장값 fallback)
@@ -1250,6 +1330,26 @@ function pgSettings(){
       <span style="font-size:11px;${isActive?'color:var(--green);font-weight:500':'color:var(--mu)'}">${isActive?'✓ 표시':''}</span>
     </div>`;
   });
+  h+=`</div></div>`;
+  // ── 통계 제외 시험 설정
+  const savedMonths=Object.keys(S.accumulated).sort();
+  h+=`<div class="sec-title" style="margin-top:22px">📊 통계 제외 시험</div>`;
+  h+=`<div class="dim" style="font-size:11px;margin-bottom:8px">체크한 시험은 통계 탭의 모든 표/그래프/학생 수상이력에서 제외됩니다. 최종명단·전체명단에서는 여전히 조회 가능합니다.</div>`;
+  h+=`<div class="card"><div style="padding:12px 14px">`;
+  if(!savedMonths.length){h+=`<div class="dim" style="font-size:12px">저장된 시험이 없습니다.</div>`;}
+  else{
+    h+=`<div style="display:flex;flex-direction:column;gap:6px">`;
+    savedMonths.slice().reverse().forEach(mk=>{
+      const d=S.accumulated[mk];
+      const excluded=!!d.excludeFromStats;
+      h+=`<label style="display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:5px;cursor:pointer;transition:background .12s;${excluded?'background:rgba(160,96,16,.08)':''}" onmouseover="this.style.background='var(--mu3)'" onmouseout="this.style.background='${excluded?'rgba(160,96,16,.08)':''}'">
+        <input type="checkbox" ${excluded?'checked':''} onchange="toggleStatsExcluded('${mk}')">
+        <span style="font-size:13px;font-weight:${excluded?'400':'500'};color:${excluded?'var(--mu)':'var(--w)'};${excluded?'text-decoration:line-through':''}">${fullLbl(mk)}</span>
+        ${excluded?'<span class="bx" style="background:rgba(160,96,16,.12);color:var(--amber);font-size:10px">통계 제외</span>':''}
+      </label>`;
+    });
+    h+=`</div>`;
+  }
   h+=`</div></div>`;
   return h;
 }

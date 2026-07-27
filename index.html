@@ -266,8 +266,12 @@ function restoreCurrentMonthFromSaved(){
       S.exMap={...d.exMap};
       if(!S.exFile)S.exFile=d.exFile||'(저장본 복원)';
     }
-    // 이전달 데이터는 자동 복원 안 함 — 향상장학 계산만 calcResults 내부 fallback으로 처리
-    S.results=calcResults();
+    // 저장된 results가 있으면 그대로 사용 (향상장학 유지). 없으면 재계산 (fallback으로 직전 월 자동 사용 시도)
+    if(d.results&&(d.results.mi||d.results.ti||d.results.d1)){
+      S.results=d.results;
+    }else{
+      S.results=calcResults();
+    }
   }
 }
 async function loadAll(){
@@ -311,8 +315,12 @@ async function loadAll(){
         });
         _bgLoading=false;
         setSyncMsg(`✓ 전체 로드 완료 (${snap.size}개월)`);
-        // 누적 데이터 보는 탭에 있으면 자동 갱신
-        if(['stats','allstudents','final'].includes(S.tab))render();
+        // 옛 저장본은 results 필드가 없어서 향상장학이 누락됨 → 이제 직전 월 데이터가 있으니 재계산
+        if(S.curStudents?.length&&!S.results?.mi&&!S.results?.ti){
+          S.results=calcResults();
+        }
+        // 누적 데이터 보는 탭 + 자동산출 탭에 있으면 자동 갱신
+        if(['stats','allstudents','final','results'].includes(S.tab))render();
       }catch(e){
         _bgLoading=false;
         setSyncMsg('⚠ 과거 데이터 로드 실패: '+e.message);
@@ -328,7 +336,7 @@ async function saveAutoResults(){
   if(!S.curStudents){alert('성적 파일을 먼저 업로드하세요.');return;}
   setSyncMsg('저장 중...');
   try{
-    const data={label:`${S.curYear}년 ${S.curMonth}월`,시험종류:S.시험종류,classStats:calcClassStats(),overallAvg:overallAvg(),allStudents:S.curStudents,exMap:S.exMap||{},exFile:S.exFile||'',savedAt:new Date().toISOString()};
+    const data={label:`${S.curYear}년 ${S.curMonth}월`,시험종류:S.시험종류,classStats:calcClassStats(),overallAvg:overallAvg(),allStudents:S.curStudents,exMap:S.exMap||{},exFile:S.exFile||'',results:S.results||null,savedAt:new Date().toISOString()};
     await db.collection('quetta_data').doc(mk).set(data,{merge:true});
     S.accumulated[mk]={...S.accumulated[mk],...data};S.allStudentsData[mk]=S.curStudents;
     setSyncMsg('✓ 자동산출 저장 완료');render();
@@ -344,6 +352,7 @@ async function saveToFirestore(){
       manual:S.manual,excluded:[...S.excluded],remarks:S.remarks,
       allStudents:S.curStudents||S.allStudentsData[mk]||null,
       exMap:S.exMap||{},exFile:S.exFile||'',
+      results:S.results||null,
       savedAt:new Date().toISOString(),
     };
     await db.collection('quetta_data').doc(mk).set(data);

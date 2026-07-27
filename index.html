@@ -232,6 +232,21 @@ let _allFilter={q:'',kye:''};
 let _finalShowExcluded=false;
 // 백그라운드 로딩 상태 (과거 월 데이터)
 let _bgLoading=false;
+// 그래프 반 필터 (null = 전체 표시, Set = 그 반들만 표시)
+let _chartActiveBans=null;
+function toggleChartBan(ban){
+  if(_chartActiveBans===null){
+    _chartActiveBans=new Set([ban]);
+  } else {
+    if(_chartActiveBans.has(ban)){
+      _chartActiveBans.delete(ban);
+      if(_chartActiveBans.size===0)_chartActiveBans=null;
+    } else {
+      _chartActiveBans.add(ban);
+    }
+  }
+  render();
+}
 function initManual(){Object.keys(SCONF.manual).forEach(id=>{if(!S.manual[id]||!S.manual[id].length)S.manual[id]=[erow(id)];});}
 function erow(id){const r={};(SCONF.manual[id]?.cols||[]).forEach(c=>r[c]='');return r;}
 function mkey(){return`${S.curYear}-${S.curMonth.padStart(2,'0')}`;}
@@ -638,17 +653,20 @@ function showStudentDetail(번호,이름,mk){
 
 // 통계 셀 클릭: 빌보드 (월×반×계열)
 function showBillboardCell(mk,ban,kye){
-  const ws=getWinnersFromSaved(S.accumulated[mk]).filter(w=>!w.excluded&&isBillboard(w)&&String(w.반)===ban&&getWinnerKye(w)===kye);
+  const ws=getWinnersFromSaved(S.accumulated[mk]).filter(w=>isBillboard(w)&&String(w.반)===ban&&getWinnerKye(w)===kye);
   const allStus=S.allStudentsData[mk]||S.accumulated[mk]?.allStudents||[];
   if(!ws.length){showModal(`${fullLbl(mk)} · ${BAN_CODE[ban]||ban}반 ${kye}`,'<div class="empty">해당 학생 없음</div>');return;}
   let html=`<div class="tw"><table class="t"><thead><tr><th>장학명</th><th>학번</th><th>이름</th><th class="num">환산</th><th>비고</th></tr></thead><tbody>`;
   ws.forEach(w=>{
     const stu=allStus.find(s=>String(s.번호)===String(w.번호));
     const hwan=stu?stu.환산.toFixed(1):(w.val||'–');
-    html+=`<tr class="clickable" onclick="closeModal();setTimeout(()=>showStudentDetail('${w.번호}','${w.이름}','${mk}'),50)"><td><span class="bx ${w.bc}">${w.lbl}</span></td><td class="nn">${w.번호||'–'}</td><td class="nm name-link">${w.이름}</td><td class="num">${hwan}</td><td style="font-size:11px;color:var(--mu)">${w.비고||''}</td></tr>`;
+    const rowCls=w.excluded?'ex clickable':'clickable';
+    const exBadge=w.excluded?' <span class="dup" style="margin-left:4px">제외</span>':'';
+    html+=`<tr class="${rowCls}" onclick="closeModal();setTimeout(()=>showStudentDetail('${w.번호}','${w.이름}','${mk}'),50)"><td><span class="bx ${w.bc}">${w.lbl}</span>${exBadge}</td><td class="nn">${w.번호||'–'}</td><td class="nm name-link">${w.이름}</td><td class="num">${hwan}</td><td style="font-size:11px;color:var(--mu)">${w.비고||''}</td></tr>`;
   });
-  html+=`</tbody></table></div><div class="dim" style="margin-top:8px;font-size:11px">학생 행을 클릭하면 상세 성적을 볼 수 있습니다.</div>`;
-  showModal(`${fullLbl(mk)} · ${BAN_CODE[ban]||ban}반(${ban}) ${kye} · ${ws.length}명`,html);
+  const exCnt=ws.filter(w=>w.excluded).length;
+  html+=`</tbody></table></div><div class="dim" style="margin-top:8px;font-size:11px">학생 행을 클릭하면 상세 성적을 볼 수 있습니다.${exCnt?` · 제외된 항목도 포함됨 (${exCnt}건)`:''}</div>`;
+  showModal(`${fullLbl(mk)} · ${BAN_CODE[ban]||ban}반(${ban}) ${kye} · ${ws.length}명${exCnt?` (제외 ${exCnt} 포함)`:''}`,html);
 }
 
 // 통계 셀 클릭: 장학 종류별
@@ -1100,14 +1118,14 @@ function pgStats(){
   h+=`</div>`;
 
   // ── 표2: 서울 빌보드 인원
-  h+=`<div class="sec-title">🏫 서울 빌보드 인원 (반별) <span class="dim" style="font-weight:400;font-size:11px;margin-left:6px">셀 클릭 → 학생 정보</span></div>`;
+  h+=`<div class="sec-title">🏫 서울 빌보드 인원 (반별) <span class="dim" style="font-weight:400;font-size:11px;margin-left:6px">셀 클릭 → 학생 정보 · 제외 항목도 포함</span></div>`;
   h+=`<div class="card"><div class="tw"><table class="stat-t"><thead><tr><th class="lh">반</th><th class="lh">코드</th>`;
   months.forEach(k=>{const d=S.accumulated[k];h+=`<th colspan="2">${(d.label||mlbl(k)).replace(/\d{4}년 /,'')}</th>`;});
   h+=`</tr><tr><th class="lh"></th><th class="lh"></th>`;months.forEach(()=>{h+=`<th>인문</th><th>자연</th>`;});h+=`</tr></thead><tbody>`;
   BAN_LIST.forEach(ban=>{
     h+=`<tr><td class="lh">${BAN_CODE[ban]||ban}</td><td class="lh" style="color:var(--mu);font-size:11px">${ban}</td>`;
     months.forEach(k=>{
-      const ws=getWinnersFromSaved(S.accumulated[k]).filter(w=>!w.excluded&&isBillboard(w));
+      const ws=getWinnersFromSaved(S.accumulated[k]).filter(w=>isBillboard(w));
       const inH=ws.filter(w=>String(w.반)===ban&&getWinnerKye(w)==='인문').length;
       const inN=ws.filter(w=>String(w.반)===ban&&getWinnerKye(w)==='자연').length;
       const ch=inH===0?'zero':'clickable';const cn=inN===0?'zero':'clickable';
@@ -1117,7 +1135,7 @@ function pgStats(){
     });h+=`</tr>`;
   });
   h+=`<tr><td class="tot-lh">계</td><td class="tot-lh" style="font-size:11px">전체</td>`;
-  months.forEach(k=>{const ws=getWinnersFromSaved(S.accumulated[k]).filter(w=>!w.excluded&&isBillboard(w));const inH=ws.filter(w=>getWinnerKye(w)==='인문').length;const inN=ws.filter(w=>getWinnerKye(w)==='자연').length;h+=`<td class="tot">${inH}</td><td class="tot">${inN}</td>`;});
+  months.forEach(k=>{const ws=getWinnersFromSaved(S.accumulated[k]).filter(w=>isBillboard(w));const inH=ws.filter(w=>getWinnerKye(w)==='인문').length;const inN=ws.filter(w=>getWinnerKye(w)==='자연').length;h+=`<td class="tot">${inH}</td><td class="tot">${inN}</td>`;});
   h+=`</tr></tbody></table></div></div>`;
 
   // ── 표3: 장학 종류별 인원
@@ -1228,7 +1246,7 @@ function pgSettings(){
 }
 
 function buildLineChart(months,monthStats){
-  const W=460,H=380,PL=46,PR=58,PT=18,PB=50;
+  const W=460,H=380,PL=48,PR=62,PT=22,PB=54;
   const iW=W-PL-PR,iH=H-PT-PB;const n=months.length;
   const ovAvgs=months.map(k=>+(monthStats[k]?.overallAvg||0));
   const banSet=new Set();
@@ -1236,38 +1254,51 @@ function buildLineChart(months,monthStats){
   const bans=[...banSet].sort((a,b)=>a-b);
   const banData={};
   bans.forEach(b=>{banData[b]=months.map(k=>{const s=(monthStats[k]?.classStats||[]).find(x=>String(x.반)===b);return s?+s.환산:null;});});
+  // 필터 적용
+  const isBanActive=b=>_chartActiveBans===null||_chartActiveBans.has(b);
+  const activeBans=bans.filter(isBanActive);
   let allVals=[...ovAvgs.filter(v=>v>0)];
-  bans.forEach(b=>allVals.push(...banData[b].filter(v=>v!==null)));
+  activeBans.forEach(b=>allVals.push(...banData[b].filter(v=>v!==null)));
   if(!allVals.length)return`<div class="card"><div class="ch"><span class="ct">추이 그래프</span></div><div class="empty">데이터 없음</div></div>`;
   const mn=Math.min(...allVals),mx=Math.max(...allVals);
   const pad=(mx-mn)*0.08||3;const lo=mn-pad,hi=mx+pad;
   const xp=i=>PL+i*(iW/Math.max(n-1,1));const yp=v=>PT+iH-(((v-lo)/(hi-lo))*iH);
   const COLORS=['#1a5fa0','#1e7a45','#a06010','#c0362a','#7b5fa0','#1a9090','#a05080','#608040'];
   let svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:${W}px;display:block;margin:0 auto;overflow:visible">`;
-  // y 그리드 (8단계 — 세로가 길어진 만큼 더 촘촘하게)
-  for(let i=0;i<=8;i++){const y=PT+iH*(i/8);const v=(hi-lo)*(1-i/8)+lo;svg+=`<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="var(--bo2)" stroke-width="1"/><text x="${PL-4}" y="${y+3}" text-anchor="end" font-size="9" fill="var(--mu)">${v.toFixed(0)}</text>`;}
+  // y 그리드
+  for(let i=0;i<=8;i++){const y=PT+iH*(i/8);const v=(hi-lo)*(1-i/8)+lo;svg+=`<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="var(--bo2)" stroke-width="1"/><text x="${PL-5}" y="${y+4}" text-anchor="end" font-size="11" fill="var(--mu)">${v.toFixed(0)}</text>`;}
   months.forEach((k,i)=>{
     const d=S.accumulated[k];const line1=(d.label||mlbl(k)).replace(/\d{4}년 /,'');const line2=d.시험종류||'';
-    svg+=`<text x="${xp(i)}" y="${H-PB+14}" text-anchor="middle" font-size="9" fill="var(--mu)">${line1}</text>`;
-    if(line2)svg+=`<text x="${xp(i)}" y="${H-PB+26}" text-anchor="middle" font-size="8" fill="var(--mu2)">(${line2})</text>`;
+    svg+=`<text x="${xp(i)}" y="${H-PB+17}" text-anchor="middle" font-size="11" fill="var(--mu)">${line1}</text>`;
+    if(line2)svg+=`<text x="${xp(i)}" y="${H-PB+31}" text-anchor="middle" font-size="10" fill="var(--mu2)">(${line2})</text>`;
     svg+=`<line x1="${xp(i)}" y1="${PT}" x2="${xp(i)}" y2="${H-PB}" stroke="var(--bo2)" stroke-width="1"/>`;
   });
+  // 반별 라인 (활성 반만)
   bans.forEach((b,ci)=>{
+    if(!isBanActive(b))return;
     const pts=banData[b];const col=COLORS[ci%COLORS.length];let path='';
     pts.forEach((v,i)=>{if(v===null)return;if(!path)path=`M${xp(i)},${yp(v)}`;else path+=`L${xp(i)},${yp(v)}`;});
     if(path)svg+=`<path d="${path}" fill="none" stroke="${col}" stroke-width="1.5" stroke-dasharray="4 2" opacity=".7"/>`;
     let lastIdx=-1;
     pts.forEach((v,i)=>{if(v!==null){svg+=`<circle cx="${xp(i)}" cy="${yp(v)}" r="3" fill="${col}" opacity=".8"><title>${S.accumulated[months[i]].label||months[i]} ${b}반: ${v.toFixed(1)}</title></circle>`;lastIdx=i;}});
-    if(lastIdx>=0&&banData[b][lastIdx]!==null)svg+=`<text x="${xp(lastIdx)+9}" y="${yp(banData[b][lastIdx])+4}" font-size="9" fill="${col}" font-weight="600">${BAN_CODE[b]||b}</text>`;
+    if(lastIdx>=0&&banData[b][lastIdx]!==null)svg+=`<text x="${xp(lastIdx)+10}" y="${yp(banData[b][lastIdx])+4}" font-size="11" fill="${col}" font-weight="600">${BAN_CODE[b]||b}</text>`;
   });
+  // 전체 평균
   let oPath='';ovAvgs.forEach((v,i)=>{if(v>0)oPath+=(!oPath?`M${xp(i)},${yp(v)}`:`L${xp(i)},${yp(v)}`);});
   if(oPath)svg+=`<path d="${oPath}" fill="none" stroke="var(--gold)" stroke-width="2.5"/>`;
-  ovAvgs.forEach((v,i)=>{if(!v)return;svg+=`<circle cx="${xp(i)}" cy="${yp(v)}" r="4" fill="var(--gold)"><title>${S.accumulated[months[i]].label||months[i]} 전체: ${v.toFixed(1)}</title></circle><text x="${xp(i)}" y="${yp(v)-8}" text-anchor="middle" font-size="9" fill="var(--gold2)" font-weight="700">${v.toFixed(1)}</text>`;});
+  ovAvgs.forEach((v,i)=>{if(!v)return;svg+=`<circle cx="${xp(i)}" cy="${yp(v)}" r="4" fill="var(--gold)"><title>${S.accumulated[months[i]].label||months[i]} 전체: ${v.toFixed(1)}</title></circle><text x="${xp(i)}" y="${yp(v)-9}" text-anchor="middle" font-size="11" fill="var(--gold2)" font-weight="700">${v.toFixed(1)}</text>`;});
   svg+=`</svg>`;
-  let legend=`<div style="display:flex;flex-wrap:wrap;gap:4px 10px;padding:6px 10px 10px;font-size:11px"><span style="color:var(--gold);font-weight:700">● 전체평균</span>`;
-  bans.forEach((b,ci)=>{legend+=`<span style="color:${COLORS[ci%COLORS.length]};opacity:.85">-- ${BAN_CODE[b]||b}반(${b})</span>`;});
+  // Legend (클릭 가능)
+  const filterOn=_chartActiveBans!==null;
+  let legend=`<div style="display:flex;flex-wrap:wrap;gap:6px 12px;padding:8px 10px 12px;font-size:12px">
+    <span style="color:var(--gold);font-weight:700;cursor:pointer;user-select:none${filterOn?';border-bottom:1px dashed var(--gold2)':''}" onclick="_chartActiveBans=null;render()" title="클릭하여 전체 반 다시 보기">● 전체평균${filterOn?' 🔄':''}</span>`;
+  bans.forEach((b,ci)=>{
+    const active=isBanActive(b);
+    legend+=`<span style="color:${COLORS[ci%COLORS.length]};opacity:${active?'.9':'.3'};cursor:pointer;user-select:none;text-decoration:${active?'none':'line-through'}" onclick="toggleChartBan('${b}')" title="클릭하여 표시/숨김">-- ${BAN_CODE[b]||b}반(${b})</span>`;
+  });
+  if(filterOn)legend+=`<span style="color:var(--mu);font-size:10px;margin-left:auto">💡 반 라벨 클릭 = 필터, 전체평균 클릭 = 전체 복귀</span>`;
   legend+=`</div>`;
-  return`<div class="card"><div class="ch"><span class="ct">추이 그래프</span><span class="cs">${months.length}개월</span></div><div style="padding:8px 6px 0">${svg}</div>${legend}</div>`;
+  return`<div class="card"><div class="ch"><span class="ct">추이 그래프</span><span class="cs">${months.length}개월${filterOn?` · ${activeBans.length}개 반 필터`:''}</span></div><div style="padding:10px 8px 0">${svg}</div>${legend}</div>`;
 }
 
 function ubH(id,lbl,sub){

@@ -1256,7 +1256,9 @@ function getWinnersFromSaved(d){
   if(d.winners?.length){
     d.winners.forEach(w=>{
       result.push(w);
-      seen.add(`${w.lbl}::${w.이름}`);
+      // seen key: 원본 lbl 기준 (override 이전 값). _origLbl 있으면 그거, 없으면 현재 lbl
+      const originalLbl=w._origLbl||w.lbl;
+      seen.add(`${originalLbl}::${w.이름}`);
     });
   }
   // manual 필드에서 누락된 수기 entries 보강
@@ -1265,20 +1267,26 @@ function getWinnersFromSaved(d){
     ACTIVE_MANUAL.forEach(id=>{
       const mc=SCONF.manual[id];
       if(!mc)return;
-      (d.manual[id]||[]).forEach(row=>{
+      (d.manual[id]||[]).forEach((row,ri)=>{
         if(!row.이름)return;
-        const key=`${mc.lbl}::${row.이름}`;
+        // Custom 항목은 row.장학명이 실제 lbl, 일반 항목은 mc.lbl 사용
+        const effectiveLbl=mc.isCustom?(row.장학명||''):mc.lbl;
+        if(mc.isCustom&&!effectiveLbl)return; // custom인데 장학명 없으면 skip
+        const key=`${effectiveLbl}::${row.이름}`;
         if(seen.has(key))return;
         seen.add(key);
-        const wkey_=row.이름+'::'+mc.lbl;
+        const wkey_=row.이름+'::'+effectiveLbl;
         result.push({
-          lbl:mc.lbl,bc:mc.bc,혜택:mc.혜택,
+          lbl:effectiveLbl,bc:mc.bc,
+          혜택:mc.isCustom?(row.혜택||''):mc.혜택,
           반:row.반||'',번호:row.학번||'',이름:row.이름,
           계열:row.계열||'',val:row.환산점수||'',
           type:'manual',
           기존장학:d.exMap?.[String(row.학번)]||'',
           비고:row.비고||(d.remarks?.[wkey_]||''),
           excluded:excludedSet.has(wkey_),
+          isCustom:!!mc.isCustom,
+          manualSchId:id,manualRi:ri,
         });
       });
     });

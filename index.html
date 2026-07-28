@@ -140,6 +140,8 @@ input[type=checkbox]{cursor:pointer;accent-color:var(--gold);width:13px;height:1
 .lbl-edit{border:1px dashed rgba(0,0,0,.15);background:transparent;font-family:inherit;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:500;min-width:100px;width:auto;transition:all .12s}
 .lbl-edit:hover{background:rgba(255,255,255,.5);border-style:solid}
 .lbl-edit:focus{outline:none;background:var(--bg2);border-color:var(--gold);box-shadow:0 0 0 2px rgba(181,104,30,.15)}
+.rdel{background:transparent;border:1px solid rgba(192,54,42,.25);color:var(--red);border-radius:5px;padding:2px 8px;cursor:pointer;font-family:inherit;font-size:12px;transition:all .12s}
+.rdel:hover{background:rgba(192,54,42,.1);border-color:var(--red)}
 .loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:65vh;color:var(--mu);font-size:14px;text-align:center;padding:40px 20px}
 .loading-spinner{width:38px;height:38px;border:3px solid var(--bo);border-top-color:var(--gold);border-radius:50%;animation:qspin 0.8s linear infinite;margin-bottom:16px}
 @keyframes qspin{to{transform:rotate(360deg)}}
@@ -225,6 +227,7 @@ let S={
   exMap:{},results:null,manual:{},
   excluded:new Set(),remarks:{},
   customLbls:{},  // 사용자 지정 장학명 (최종명단에서 수정 가능): {wkey: 새 lbl}
+  deletedKeys:new Set(),  // 최종명단에서 삭제한 항목 (자동산출 결과 재계산 시에도 안 보임)
   accumulated:{},allStudentsData:{},
   finalViewMonth:null,allViewMonth:null,
   dbg:'',err:null,syncMsg:'',userEmail:'',
@@ -303,6 +306,7 @@ async function loadAll(){
       if(d.remarks)S.remarks=d.remarks;
       if(d.시험종류)S.시험종류=d.시험종류;
       if(d.customLbls)S.customLbls=d.customLbls;
+      if(d.deletedKeys)S.deletedKeys=new Set(d.deletedKeys);
     }
     initManual();
     restoreCurrentMonthFromSaved();
@@ -357,6 +361,7 @@ async function saveToFirestore(){
       classStats:calcClassStats(),overallAvg:overallAvg(),
       manual:S.manual,excluded:[...S.excluded],remarks:S.remarks,
       customLbls:S.customLbls||{},
+      deletedKeys:[...S.deletedKeys],
       allStudents:S.curStudents||S.allStudentsData[mk]||null,
       exMap:S.exMap||{},exFile:S.exFile||'',
       results:S.results||null,
@@ -371,7 +376,7 @@ async function autoSaveManual(){
   clearTimeout(window._ast);
   window._ast=setTimeout(async()=>{
     const mk=mkey();
-    try{await db.collection('quetta_data').doc(mk).set({manual:S.manual,excluded:[...S.excluded],remarks:S.remarks,customLbls:S.customLbls||{}},{merge:true});setSyncMsg('✓ 자동저장');}catch(e){}
+    try{await db.collection('quetta_data').doc(mk).set({manual:S.manual,excluded:[...S.excluded],remarks:S.remarks,customLbls:S.customLbls||{},deletedKeys:[...S.deletedKeys]},{merge:true});setSyncMsg('✓ 자동저장');}catch(e){}
   },800);
 }
 async function toggleStatsExcluded(mk){
@@ -400,7 +405,7 @@ async function loadMonthData(){
   S.excluded=new Set();S.remarks={};S.monthConfirmed=false;S.finalViewMonth=null;
   // 작업 상태 초기화 (월이 바뀌었으니 현재 메모리의 학생 명단 비움)
   S.curStudents=null;S.prevStudents=null;S.curFile=null;S.prevFile=null;S.results=null;
-  S.exMap={};S.exFile=null;S.customLbls={};
+  S.exMap={};S.exFile=null;S.customLbls={};S.deletedKeys=new Set();
   if(S.accumulated[mk]){
     const d=S.accumulated[mk];
     if(d.manual)Object.keys(SCONF.manual).forEach(id=>{if(d.manual[id])S.manual[id]=d.manual[id];});
@@ -408,6 +413,7 @@ async function loadMonthData(){
     if(d.remarks)S.remarks=d.remarks;
     if(d.시험종류)S.시험종류=d.시험종류;
     if(d.customLbls)S.customLbls=d.customLbls;
+    if(d.deletedKeys)S.deletedKeys=new Set(d.deletedKeys);
   }
   // 새 월의 저장본 자동 복원 (exMap 포함)
   restoreCurrentMonthFromSaved();
@@ -545,9 +551,10 @@ function getAllWinners(){
   });
   const nc={};ws.forEach(w=>nc[w.이름]=(nc[w.이름]||0)+1);
   ws.forEach(w=>{if(nc[w.이름]>1)w.dup=ws.filter(x=>x.이름===w.이름&&x.lbl!==w.lbl).map(x=>x.lbl);});
-  return ws;
+  // 삭제된 항목 필터링
+  return ws.filter(w=>!S.deletedKeys.has(wkey(w)));
 }
-function wkey(w){return`${w.이름}::${w.lbl}`;}
+function wkey(w){return`${w.이름}::${w._origLbl||w.lbl}`;}
 function exportExcel(){
   const wb=XLSX.utils.book_new();const ws=getAllWinners();
   const h1=['장학명','혜택','반','번호/학번','이름','계열','환산/향상','기존장학','중복여부','제외여부','비고'];
@@ -632,6 +639,70 @@ function addManualStudent(){
   autoSaveManual();render();
 }
 function delManualStudent(schId,ri){S.manual[schId].splice(ri,1);autoSaveManual();render();}
+// 학생 직접 추가 모달 (성적 파일 없이도 이름/번호/반 직접 입력)
+function showAddStudentModal(){
+  const html=`
+    <div style="display:grid;grid-template-columns:80px 1fr;gap:8px 12px;align-items:center;margin-bottom:12px">
+      <label style="font-size:12px;color:var(--mu)">반</label>
+      <input class="fi" id="add-반" type="text" placeholder="예: 71">
+      <label style="font-size:12px;color:var(--mu)">번호/학번</label>
+      <input class="fi nn" id="add-학번" type="text" placeholder="예: 5857">
+      <label style="font-size:12px;color:var(--mu)">이름 *</label>
+      <input class="fi" id="add-이름" type="text" placeholder="이름 (필수)">
+      <label style="font-size:12px;color:var(--mu)">계열</label>
+      <select class="fi" id="add-계열"><option value="">–</option><option value="인문">인문</option><option value="자연">자연</option></select>
+      <label style="font-size:12px;color:var(--mu)">환산점수</label>
+      <input class="fi nn" id="add-환산" type="text" placeholder="선택사항">
+      <label style="font-size:12px;color:var(--mu)">장학 종류 *</label>
+      <select class="fi" id="add-schId" onchange="document.getElementById('add-custom-fields').style.display=this.value==='custom'?'grid':'none'">
+        <option value="">— 선택 —</option>
+        <optgroup label="교습비 100%"><option value="dasung_in">${SCONF.manual.dasung_in.lbl}</option><option value="dasung_nat">${SCONF.manual.dasung_nat.lbl}</option></optgroup>
+        <optgroup label="매점상품권 5만원권"><option value="honor_in">${SCONF.manual.honor_in.lbl}</option><option value="honor_nat">${SCONF.manual.honor_nat.lbl}</option></optgroup>
+        <optgroup label="직접 입력"><option value="custom">✏️ 직접 입력</option></optgroup>
+      </select>
+    </div>
+    <div id="add-custom-fields" style="display:none;grid-template-columns:80px 1fr;gap:8px 12px;align-items:center;margin-bottom:12px;padding:10px;background:rgba(181,104,30,.06);border:1px dashed rgba(181,104,30,.3);border-radius:6px">
+      <label style="font-size:12px;color:var(--gold2);font-weight:500">장학명 *</label>
+      <input class="fi" id="add-lbl" type="text" placeholder="예: 특별상">
+      <label style="font-size:12px;color:var(--gold2);font-weight:500">혜택</label>
+      <input class="fi" id="add-혜택" type="text" placeholder="예: 도서상품권 3만원">
+    </div>
+    <div style="display:grid;grid-template-columns:80px 1fr;gap:8px 12px;align-items:center;margin-bottom:14px">
+      <label style="font-size:12px;color:var(--mu)">비고</label>
+      <input class="fi" id="add-비고" type="text" placeholder="선택사항">
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn" onclick="closeModal()">취소</button>
+      <button class="btn btn-g" onclick="submitAddStudent()">+ 추가</button>
+    </div>
+  `;
+  showModal('학생 직접 추가',html);
+}
+function submitAddStudent(){
+  const 반=document.getElementById('add-반').value.trim();
+  const 학번=document.getElementById('add-학번').value.trim();
+  const 이름=document.getElementById('add-이름').value.trim();
+  const 계열=document.getElementById('add-계열').value;
+  const 환산=document.getElementById('add-환산').value.trim();
+  const schId=document.getElementById('add-schId').value;
+  const 비고=document.getElementById('add-비고').value.trim();
+  if(!이름){alert('이름은 필수입니다.');return;}
+  if(!schId){alert('장학 종류를 선택하세요.');return;}
+  const isCustom=SCONF.manual[schId]?.isCustom;
+  let 장학명='',혜택='';
+  if(isCustom){
+    장학명=document.getElementById('add-lbl').value.trim();
+    혜택=document.getElementById('add-혜택').value.trim();
+    if(!장학명){alert('장학명을 입력하세요.');return;}
+  }
+  if(!S.manual[schId])S.manual[schId]=[];
+  const entry={반,학번,이름,계열,환산점수:환산,비고};
+  if(isCustom){entry.장학명=장학명;entry.혜택=혜택;}
+  S.manual[schId].push(entry);
+  closeModal();
+  autoSaveManual();
+  render();
+}
 function toggleExcl(idx){const k=wkey(_ws[idx]);if(S.excluded.has(k))S.excluded.delete(k);else S.excluded.add(k);autoSaveManual();render();}
 function updCustomLbl(idx,newLbl){
   const w=_ws[idx];
@@ -647,6 +718,36 @@ function updCustomLbl(idx,newLbl){
   }
   autoSaveManual();
   render();
+}
+// 최종명단에서 winner 완전 삭제
+function deleteWinner(idx){
+  const w=_ws[idx];if(!w)return;
+  const isManual=w.type==='manual';
+  const msg=isManual
+    ?`"${w.이름} - ${w.lbl}" 항목을 완전히 삭제하시겠습니까?\n\n수기 입력 데이터가 영구 삭제됩니다.`
+    :`"${w.이름} - ${w.lbl}" 항목을 삭제하시겠습니까?\n\n자동 산출 결과에서 숨겨지고, 다시 산출해도 표시되지 않습니다.`;
+  if(!confirm(msg))return;
+  const k=wkey(w);
+  if(isManual&&w.manualSchId&&w.manualRi!==undefined&&S.manual[w.manualSchId]?.[w.manualRi]){
+    // Manual: 실제 삭제
+    S.manual[w.manualSchId].splice(w.manualRi,1);
+  } else {
+    // Auto: deletedKeys 에 추가
+    S.deletedKeys.add(k);
+  }
+  // 관련 상태 정리
+  S.excluded.delete(k);
+  delete S.remarks[k];
+  delete S.customLbls[k];
+  autoSaveManual();
+  render();
+}
+// 수기 입력 항목 필드 수정
+function updManualField(schId,ri,field,val){
+  if(S.manual[schId]?.[ri]){
+    S.manual[schId][ri][field]=val;
+    autoSaveManual();
+  }
 }
 function updRemark(idx,val){
   const w=_ws[idx];const k=wkey(w);
@@ -885,7 +986,8 @@ function pgResults(){
 }
 function pgManual(){
   const hasStudents=!!S.curStudents;
-  let h=`<div class="ph"><h2>수기 입력</h2><p>${S.curYear}년 ${S.curMonth}월 · 학생 명단에서 선택해 장학 추가</p></div>`;
+  let h=`<div class="ph"><h2>수기 입력</h2><p>${S.curYear}년 ${S.curMonth}월 · 학생 명단에서 선택해 장학 추가 · 성적 파일 없이도 직접 추가 가능</p></div>`;
+  h+=`<div class="btn-row"><button class="btn btn-g" onclick="showAddStudentModal()">+ 학생 직접 추가 (성적 파일 없이)</button><span class="dim" style="font-size:11px">성적 파일에 없는 학생을 이름·번호·반부터 직접 입력하려면 이 버튼을 사용하세요</span></div>`;
   h+=`<div class="card" style="margin-bottom:12px"><div class="ch"><span class="ct">장학생 추가</span><span class="cs">${hasStudents?S.curStudents.length+'명 로드됨':'성적 파일 미업로드'}</span></div>
   <div style="padding:12px 14px">
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
@@ -923,9 +1025,24 @@ function pgManual(){
     h+=`<div class="tw"><table class="t"><thead><tr><th>장학명</th><th>혜택</th><th>반</th><th>번호</th><th>이름</th><th>계열</th><th>환산</th><th>비고</th><th></th></tr></thead><tbody>`;
     allEntries.forEach(r=>{
       const def=SCONF.manual[r.schId];
-      const displayLbl=def.isCustom?(r.장학명||'(장학명 없음)'):def.lbl;
-      const displayBenefit=def.isCustom?(r.혜택||'–'):def.혜택;
-      h+=`<tr><td><span class="bx ${def.bc}">${displayLbl}</span>${def.isCustom?' <span class="dim" style="font-size:10px">(직접입력)</span>':''}</td><td style="font-size:11px;color:var(--mu)">${displayBenefit}</td><td>${r.반}반</td><td class="nn">${r.학번||''}</td><td class="nm">${r.이름}</td><td>${r.계열||'–'}</td><td class="nn">${r.환산점수||'–'}</td><td><input class="fi" style="width:100px" placeholder="비고" value="${(r.비고||'').replace(/"/g,'&quot;')}" oninput="updManualNote('${r.schId}',${r.ri},this.value)"></td><td><button class="rdel" onclick="delManualStudent('${r.schId}',${r.ri})">✕</button></td></tr>`;
+      // 장학명/혜택: custom 이면 편집 가능, 아니면 SCONF에서 고정
+      const lblCell=def.isCustom
+        ?`<input class="fi" style="min-width:130px;font-size:11px" placeholder="장학명" value="${String(r.장학명||'').replace(/"/g,'&quot;')}" oninput="updManualField('${r.schId}',${r.ri},'장학명',this.value)">`
+        :`<span class="bx ${def.bc}">${def.lbl}</span>`;
+      const benefitCell=def.isCustom
+        ?`<input class="fi" style="min-width:130px;font-size:11px" placeholder="혜택" value="${String(r.혜택||'').replace(/"/g,'&quot;')}" oninput="updManualField('${r.schId}',${r.ri},'혜택',this.value)">`
+        :`<span style="font-size:11px;color:var(--mu)">${def.혜택}</span>`;
+      h+=`<tr>
+        <td>${lblCell}${def.isCustom?' <span class="dim" style="font-size:10px">직접</span>':''}</td>
+        <td>${benefitCell}</td>
+        <td><input class="fi" style="width:55px;font-size:11px" value="${String(r.반||'').replace(/"/g,'&quot;')}" oninput="updManualField('${r.schId}',${r.ri},'반',this.value)"></td>
+        <td><input class="fi nn" style="width:70px;font-size:11px" value="${String(r.학번||'').replace(/"/g,'&quot;')}" oninput="updManualField('${r.schId}',${r.ri},'학번',this.value)"></td>
+        <td><input class="fi" style="width:80px;font-size:11px;font-weight:500" value="${String(r.이름||'').replace(/"/g,'&quot;')}" oninput="updManualField('${r.schId}',${r.ri},'이름',this.value)"></td>
+        <td><select class="fi" style="width:64px;font-size:11px" onchange="updManualField('${r.schId}',${r.ri},'계열',this.value)"><option value="">-</option><option value="인문" ${r.계열==='인문'?'selected':''}>인문</option><option value="자연" ${r.계열==='자연'?'selected':''}>자연</option></select></td>
+        <td><input class="fi nn" style="width:60px;font-size:11px" value="${String(r.환산점수||'').replace(/"/g,'&quot;')}" oninput="updManualField('${r.schId}',${r.ri},'환산점수',this.value)"></td>
+        <td><input class="fi" style="width:100px;font-size:11px" placeholder="비고" value="${(r.비고||'').replace(/"/g,'&quot;')}" oninput="updManualNote('${r.schId}',${r.ri},this.value)"></td>
+        <td><button class="rdel" onclick="delManualStudent('${r.schId}',${r.ri})" title="삭제">✕</button></td>
+      </tr>`;
     });
     h+=`</tbody></table></div>`;
   }
@@ -963,7 +1080,7 @@ function pgFinal(){
   h+=`<div class="btn-row"><button class="btn btn-g" onclick="exportExcel()">⬇ 엑셀 다운로드</button><button class="btn btn-gr" onclick="saveToFirestore().then(()=>render())">☁ 이번달 저장</button><button class="${toggleCls}" onclick="_finalShowExcluded=!_finalShowExcluded;render()">${toggleLbl}</button>${dropdown}</div>`;
   h+=`<div style="font-size:11px;color:var(--mu);margin-bottom:10px">☑ 체크 = 제외(줄 긋기) · 비고는 수기입력 탭과 양방향 sync · 엑셀 다운로드 시 제외 항목엔 취소선 적용</div>`;
   if(!_ws.length)return h+`<div class="empty">산출된 장학생이 없습니다.</div>`;
-  h+=`<div class="card"><div class="tw"><table class="t"><thead><tr><th>제외</th><th>장학명</th><th>혜택</th><th>반</th><th>번호</th><th>이름</th><th>계열</th><th>환산/향상</th><th>기존장학</th><th>중복</th><th style="min-width:120px">비고</th></tr></thead><tbody>`;
+  h+=`<div class="card"><div class="tw"><table class="t"><thead><tr><th>제외</th><th>장학명</th><th>혜택</th><th>반</th><th>번호</th><th>이름</th><th>계열</th><th>환산/향상</th><th>기존장학</th><th>중복</th><th style="min-width:120px">비고</th><th>삭제</th></tr></thead><tbody>`;
   let visibleCount=0;
   _ws.forEach((w,i)=>{
     const k=wkey(w);const ex=S.excluded.has(k);
@@ -977,9 +1094,9 @@ function pgFinal(){
     const noteVal=S.remarks[k]!==undefined?S.remarks[k]:(w.manualNote||'');
     // 장학명 편집 가능한 input (뱃지 스타일 유지)
     const lblCell=`<input class="lbl-edit bx ${w.bc}" value="${String(w.lbl).replace(/"/g,'&quot;')}" onchange="updCustomLbl(${i},this.value)" onblur="updCustomLbl(${i},this.value)" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.value='${String(w.lbl).replace(/'/g,"\\'")}';this.blur();}" title="클릭하여 장학명 수정">`;
-    h+=`<tr class="${ex?'ex':''}"><td><input type="checkbox" ${ex?'checked':''} onchange="toggleExcl(${i})"></td><td>${lblCell}</td><td style="font-size:11px;color:var(--mu)">${w.혜택}</td><td>${w.반?w.반+'반':''}</td><td class="nn">${w.번호||'–'}</td><td class="nm"><span class="name-link" onclick="showStudentDetail('${w.번호}','${w.이름}')">${w.이름}</span>${dup}</td><td>${w.계열||'–'}</td><td class="nn">${w.val}</td><td>${exg}</td><td style="font-size:11px;color:${w.dup?.length?'var(--red)':'var(--mu)'}">${dupFull}</td><td><input class="fi" style="width:110px;font-size:11px" placeholder="비고..." value="${String(noteVal).replace(/"/g,'&quot;')}" oninput="updRemark(${i},this.value)"></td></tr>`;
+    h+=`<tr class="${ex?'ex':''}"><td><input type="checkbox" ${ex?'checked':''} onchange="toggleExcl(${i})"></td><td>${lblCell}</td><td style="font-size:11px;color:var(--mu)">${w.혜택}</td><td>${w.반?w.반+'반':''}</td><td class="nn">${w.번호||'–'}</td><td class="nm"><span class="name-link" onclick="showStudentDetail('${w.번호}','${w.이름}')">${w.이름}</span>${dup}</td><td>${w.계열||'–'}</td><td class="nn">${w.val}</td><td>${exg}</td><td style="font-size:11px;color:${w.dup?.length?'var(--red)':'var(--mu)'}">${dupFull}</td><td><input class="fi" style="width:110px;font-size:11px" placeholder="비고..." value="${String(noteVal).replace(/"/g,'&quot;')}" oninput="updRemark(${i},this.value)"></td><td><button class="rdel" onclick="deleteWinner(${i})" title="완전 삭제">✕</button></td></tr>`;
   });
-  if(!visibleCount){h+=`<tr><td colspan="11" class="empty" style="padding:14px">${_finalShowExcluded?'표시할 항목 없음':'모든 항목이 제외 상태입니다. 토글 버튼으로 표시 가능'}</td></tr>`;}
+  if(!visibleCount){h+=`<tr><td colspan="12" class="empty" style="padding:14px">${_finalShowExcluded?'표시할 항목 없음':'모든 항목이 제외 상태입니다. 토글 버튼으로 표시 가능'}</td></tr>`;}
   h+=`</tbody></table></div></div>`;return h;
 }
 function toggleAllSort(col){

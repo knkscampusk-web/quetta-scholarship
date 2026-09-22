@@ -119,9 +119,13 @@ input[type=checkbox]{cursor:pointer;accent-color:var(--gold);width:13px;height:1
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--bo);border-radius:3px}
-.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;align-items:start}
+.stat-grid{display:grid;grid-template-columns:1fr 1.6fr;gap:12px;margin-bottom:14px;align-items:start}
 .stat-grid > .card{margin-bottom:0}
 @media(max-width:1100px){.stat-grid{grid-template-columns:1fr}}
+.chart-tip{position:fixed;background:var(--bg2);border:1px solid var(--bo);border-radius:6px;padding:8px 12px;font-size:12px;pointer-events:none;z-index:1500;box-shadow:0 4px 14px rgba(0,0,0,.15);white-space:nowrap;transition:opacity .08s}
+.chart-tip .tt{font-weight:700;font-size:13px;margin-bottom:2px}
+.chart-tip .ts{color:var(--mu);font-size:11px;margin-bottom:4px}
+.chart-tip .tv{font-size:14px;font-weight:600}
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.42);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px;animation:fadeIn .12s}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 .modal-box{background:var(--bg2);border-radius:10px;max-width:720px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--bo);box-shadow:0 8px 32px rgba(0,0,0,.18)}
@@ -212,6 +216,10 @@ let SCONF={
     honor_nat:{lbl:'성적우수자 (자연)',혜택:'매점상품권 5만원권',bc:'bb',multi:true,cols:['반','학번','이름','환산점수','비고']},
     improve_gift:{lbl:'성적 향상',혜택:'매점상품권 5만원권',bc:'bg',multi:true,cols:['반','학번','이름','비고']},
     custom:{lbl:'직접 입력',혜택:'',bc:'bq',multi:true,cols:['반','학번','이름','장학명','혜택','환산점수','비고'],isCustom:true},
+  },
+  // 혜택별 원가 (100% 기준) — 지급액 자동 계산용
+  rates:{
+    식비:236200,독서실비:100000,교습비:236200,매점상품권:50000,
   }
 };
 const ACTIVE_MANUAL=['dasung_in','dasung_nat','honor_in','honor_nat','custom'];
@@ -291,6 +299,7 @@ async function loadAll(){
       const sv=cfgDoc.data();
       if(sv.auto)Object.keys(sv.auto).forEach(k=>{if(SCONF.auto[k])Object.assign(SCONF.auto[k],sv.auto[k]);});
       if(sv.manual)Object.keys(sv.manual).forEach(k=>{if(SCONF.manual[k])Object.assign(SCONF.manual[k],sv.manual[k]);});
+      if(sv.rates)Object.assign(SCONF.rates,sv.rates);
     }
     // ─── 1단계: 이번달 데이터만 우선 가져오기 (메인 화면 빨리 띄우기 위함) ───
     setLoadSub('이번달 데이터 가져오는 중...');
@@ -376,7 +385,14 @@ async function autoSaveManual(){
   clearTimeout(window._ast);
   window._ast=setTimeout(async()=>{
     const mk=mkey();
-    try{await db.collection('quetta_data').doc(mk).set({manual:S.manual,excluded:[...S.excluded],remarks:S.remarks,customLbls:S.customLbls||{},deletedKeys:[...S.deletedKeys]},{merge:true});setSyncMsg('✓ 자동저장');}catch(e){}
+    const updates={manual:S.manual,excluded:[...S.excluded],remarks:S.remarks,customLbls:S.customLbls||{},deletedKeys:[...S.deletedKeys]};
+    try{
+      await db.collection('quetta_data').doc(mk).set(updates,{merge:true});
+      // 메모리도 sync — 리포트/전체명단 등 다른 뷰에서 즉시 반영되도록
+      if(!S.accumulated[mk])S.accumulated[mk]={};
+      Object.assign(S.accumulated[mk],updates);
+      setSyncMsg('✓ 자동저장');
+    }catch(e){}
   },800);
 }
 async function toggleStatsExcluded(mk){
@@ -411,12 +427,40 @@ function generateReportHTML(mk,forDownload){
     if(!isEx)num++;
     return{...w,num:isEx?'':num,isEx};
   });
-  // 혜택별 인원 집계 (제외 제외)
-  const 혜택집계={};
+  // 혜택별 인원 집계 + 자동 금액 계산
+  const 혜택집계={};let 자동총액=0;
   winners.filter(w=>!w.excluded).forEach(w=>{
     const 혜택=w.혜택||'(미지정)';
     혜택집계[혜택]=(혜택집계[혜택]||0)+1;
+    자동총액+=calcBenefitAmount(w.혜택);
   });
+  // 사용자 override 총액 (수동 입력) 또는 자동 계산값
+  const 사용총액=(meta.총지급액||'').trim();
+  // 시행일자 포맷
+  const formatExamDate=(dateStr)=>{
+    if(!dateStr)return '';
+    try{
+      const [y,m,d]=dateStr.split('-').map(Number);
+      const date=new Date(y,m-1,d);
+      const wd=['일','월','화','수','목','금','토'][date.getDay()];
+      return `${m}월 ${시험종류||'모의고사'}_${y}년 ${m}월 ${d}일(${wd})`;
+    }catch(e){return dateStr;}
+  };
+  // 시상 일시 포맷
+  const formatAwardDate=(dtStr)=>{
+    if(!dtStr)return '';
+    try{
+      const [datePart,timePart]=dtStr.split('T');
+      const [y,m,d]=datePart.split('-').map(Number);
+      const [h,mi]=timePart?timePart.split(':').map(Number):[0,0];
+      const date=new Date(y,m-1,d);
+      const wd=['일','월','화','수','목','금','토'][date.getDay()];
+      const ampm=h<12?'오전':'오후';
+      const h12=h%12||12;
+      const miStr=mi>0?` ${mi}분`:'';
+      return `${m}월 ${d}일 (${wd}) ${ampm} ${h12}시${miStr}`;
+    }catch(e){return dtStr;}
+  };
   const styles=`
     body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;font-size:11pt;line-height:1.6;color:#222;padding:0;margin:0}
     h1{font-size:16pt;font-weight:700;margin:0 0 18px;text-align:center;border-bottom:2px solid #333;padding-bottom:8px}
@@ -426,35 +470,48 @@ function generateReportHTML(mk,forDownload){
     th{background:#f0efe9;font-weight:700}
     tr.ex td{text-decoration:line-through;color:#888}
     .name{font-weight:600}
+    .amt{text-align:right;padding-right:10px}
     .meta-row{margin:6px 0;line-height:1.7}
     .meta-row strong{margin-right:8px}
-    .field-input{border:1px dashed #bbb;padding:2px 6px;background:#fafaf6;font-family:inherit;font-size:inherit;width:calc(100% - 40px);border-radius:3px}
+    .field-input{border:1px dashed #bbb;padding:2px 6px;background:#fafaf6;font-family:inherit;font-size:inherit;border-radius:3px}
     .field-input:focus{outline:none;border-color:#a06010;background:#fff}
     .field-textarea{border:1px dashed #bbb;padding:6px 8px;background:#fafaf6;font-family:inherit;font-size:inherit;width:calc(100% - 20px);min-height:80px;border-radius:3px;resize:vertical;line-height:1.6}
     .field-textarea:focus{outline:none;border-color:#a06010;background:#fff}
     .summary-item{margin:4px 0;padding-left:12px}
+    .auto-tag{font-size:9pt;color:#888;margin-left:6px}
     @media print{body{padding:20px}}
   `;
-  const fieldInput=(field,placeholder)=>{
+  // 필드 렌더링 함수들 (편집 모드 vs 다운로드 모드)
+  const fieldInput=(field,placeholder,width)=>{
     const val=(meta[field]||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');
-    if(forDownload){
-      return val?`<span>${val.replace(/\n/g,'<br>')}</span>`:`<span style="color:#999">(미입력)</span>`;
-    }
-    return `<input class="field-input" placeholder="${placeholder}" value="${val}" oninput="saveReportMeta('${mk}','${field}',this.value)">`;
+    if(forDownload)return val?`<span>${val.replace(/\n/g,'<br>')}</span>`:`<span style="color:#999">(미입력)</span>`;
+    return `<input class="field-input" placeholder="${placeholder}" value="${val}" style="width:${width||'260px'}" oninput="saveReportMeta('${mk}','${field}',this.value)">`;
+  };
+  const fieldDate=(field,placeholder,displayFn)=>{
+    const val=meta[field]||'';
+    if(forDownload)return displayFn?displayFn(val):(val||`<span style="color:#999">(미입력)</span>`);
+    const display=displayFn?displayFn(val):val;
+    return `<input class="field-input" type="date" value="${val}" onchange="saveReportMeta('${mk}','${field}',this.value);render();showReportModal('${mk}')" style="width:150px"> ${display?`<span style="margin-left:8px;color:var(--gold2);font-size:11px">→ ${display}</span>`:''}`;
+  };
+  const fieldDatetime=(field,displayFn)=>{
+    const val=meta[field]||'';
+    if(forDownload)return displayFn?displayFn(val):(val||`<span style="color:#999">(미입력)</span>`);
+    const display=displayFn?displayFn(val):val;
+    return `<input class="field-input" type="datetime-local" value="${val}" onchange="saveReportMeta('${mk}','${field}',this.value);render();showReportModal('${mk}')" style="width:200px"> ${display?`<span style="margin-left:8px;color:var(--gold2);font-size:11px">→ ${display}</span>`:''}`;
   };
   const fieldTextarea=(field,placeholder)=>{
     const val=(meta[field]||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
-    if(forDownload){
-      return val?`<div style="white-space:pre-wrap">${val}</div>`:`<div style="color:#999">(미입력)</div>`;
-    }
+    if(forDownload)return val?`<div style="white-space:pre-wrap">${val}</div>`:`<div style="color:#999">(미입력)</div>`;
     return `<textarea class="field-textarea" placeholder="${placeholder}" oninput="saveReportMeta('${mk}','${field}',this.value)">${val}</textarea>`;
   };
+  // 표
   let tableHtml=`<table>
-    <thead><tr><th style="width:60px">번호</th><th style="width:100px">이름</th><th style="width:60px">반</th><th style="width:80px">학번</th><th>장학금 종류</th><th style="width:120px">지급 금액</th><th style="width:120px">비고</th></tr></thead>
+    <thead><tr><th style="width:50px">번호</th><th style="width:90px">이름</th><th style="width:55px">반</th><th style="width:70px">학번</th><th>장학금 종류</th><th style="width:130px">지급 금액</th><th style="width:100px">금액(원)</th><th style="width:110px">비고</th></tr></thead>
     <tbody>`;
   rows.forEach(w=>{
     const _비고=w.비고||(S.remarks?.[wkey(w)]||'');
     const exNote=w.isEx?(_비고?_비고+' / 제외':'제외'):_비고;
+    const amt=calcBenefitAmount(w.혜택);
     tableHtml+=`<tr class="${w.isEx?'ex':''}">
       <td>${w.num}</td>
       <td class="name">${w.이름}</td>
@@ -462,31 +519,41 @@ function generateReportHTML(mk,forDownload){
       <td>${w.번호||''}</td>
       <td>${w.lbl}</td>
       <td>${w.혜택||''}</td>
+      <td class="amt">${amt>0?amt.toLocaleString():'–'}</td>
       <td>${exNote}</td>
     </tr>`;
   });
   tableHtml+=`</tbody></table>`;
+  // 요약
   let summaryHtml='';
   Object.entries(혜택집계).forEach(([혜택,cnt])=>{
     summaryHtml+=`<div class="summary-item">· ${혜택}: ${cnt}명</div>`;
   });
   summaryHtml+=`<div class="summary-item" style="margin-top:8px"><strong>총 대상 인원:</strong> ${winners.filter(w=>!w.excluded).length}명 ${winners.filter(w=>w.excluded).length?`(제외 ${winners.filter(w=>w.excluded).length}명 별도)`:''}</div>`;
-  summaryHtml+=`<div class="summary-item" style="margin-top:6px"><strong>총 지급액:</strong> ${fieldInput('총지급액','예: 3,295,300원')}</div>`;
-  summaryHtml+=`<div class="summary-item" style="margin-top:6px"><strong>공제 안내:</strong> ${fieldInput('공제안내','예: 6월분 교습비에서 선공제')}</div>`;
+  // 총액: 자동 계산 + 사용자 override 가능
+  const 표시총액=사용총액||자동총액.toLocaleString()+'원';
+  const 자동태그=사용총액?'':`<span class="auto-tag">(자동 계산)</span>`;
+  summaryHtml+=`<div class="summary-item" style="margin-top:8px"><strong>총 지급액:</strong> ${forDownload?표시총액:`<span style="font-weight:700;color:#a06010">${자동총액.toLocaleString()}원</span><span class="auto-tag">(자동 계산)</span>`}</div>`;
+  if(!forDownload){
+    summaryHtml+=`<div class="summary-item" style="margin-top:6px;color:#666;font-size:10pt"><strong style="font-weight:400">수동 override:</strong> ${fieldInput('총지급액','비어두면 자동 계산값 사용','200px')}</div>`;
+  } else if(사용총액){
+    summaryHtml+=`<div class="summary-item"><strong>(수동 조정):</strong> ${사용총액}</div>`;
+  }
+  summaryHtml+=`<div class="summary-item" style="margin-top:6px"><strong>공제 안내:</strong> ${fieldInput('공제안내','예: 6월분 교습비에서 선공제','300px')}</div>`;
   const body=`
     <h1>강남대성 퀘타 ${year}년 ${month}월 모의고사 장학생 현황</h1>
     <h2>1. 모의고사 정보</h2>
-    <div class="meta-row">모의고사 시행 : ${fieldInput('시행일자','예: '+month+'월 더 프리미엄 모의고사_'+year+'년 '+month+'월 XX일(X)')}</div>
+    <div class="meta-row">모의고사 시행 : ${fieldDate('시행일자','',formatExamDate)}</div>
     <div class="meta-row">시험 종류 : ${시험종류||'-'}</div>
     <h2>2. 장학생 명단</h2>
     ${tableHtml}
     <h2>3. 총 지급 내역 요약</h2>
     ${summaryHtml}
     <h2>4. 시상</h2>
-    <div class="meta-row"><strong>시상 일시:</strong> ${fieldInput('시상일시','예: 4월 8일 (화) 오전 8시 20분')}</div>
-    <div class="meta-row"><strong>시상 장소:</strong> ${fieldInput('시상장소','예: 강의동 로비층 행정실')}</div>
+    <div class="meta-row"><strong>시상 일시:</strong> ${fieldDatetime('시상일시',formatAwardDate)}</div>
+    <div class="meta-row"><strong>시상 장소:</strong> ${fieldInput('시상장소','예: 강의동 로비층 행정실','260px')}</div>
     <h2>5. 기타 사항</h2>
-    ${fieldTextarea('기타사항','자유 기재 (예: 각 장학금 간 중복자는 유리한 장학으로 적용. 기존 입학 장학 적용중인 학생은 수기로 장학금액 조정...)')}
+    ${fieldTextarea('기타사항','자유 기재 (예: 각 장학금 간 중복자는 유리한 장학으로 적용...)')}
   `;
   return `<style>${styles}</style>${body}`;
 }
@@ -494,13 +561,14 @@ function showReportModal(mk){
   const html=generateReportHTML(mk,false);
   const modalBody=`
     <div style="margin-bottom:12px;padding:10px 12px;background:rgba(181,104,30,.06);border:1px solid rgba(181,104,30,.2);border-radius:6px;font-size:11px;color:var(--gold2)">
-      💡 <strong>편집 가능:</strong> 시행일자·시상일시·시상장소·기타사항·총지급액 필드는 클릭해서 편집. 자동 저장됩니다.
+      💡 <strong>편집 즉시 자동 저장됩니다.</strong> 시행일자·시상일시는 달력 클릭 · 총 지급액은 자동 계산 (설정 탭에서 원가 관리)
     </div>
     <div style="border:1px solid var(--bo);border-radius:6px;padding:20px;background:#fff;color:#222;max-height:60vh;overflow-y:auto">
       ${html}
     </div>
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--bo)">
       <button class="btn" onclick="closeModal()">닫기</button>
+      <button class="btn btn-gr" onclick="setSyncMsg('✓ 리포트 저장됨');closeModal()">💾 저장 후 닫기</button>
       <button class="btn btn-b" onclick="printReport('${mk}')">🖨 인쇄/PDF</button>
       <button class="btn btn-g" onclick="downloadReportDoc('${mk}')">⬇ Word 다운로드</button>
     </div>
@@ -526,12 +594,28 @@ function downloadReportDoc(mk){
 async function saveSettings(){
   setSyncMsg('설정 저장 중...');
   try{
-    const sv={auto:{},manual:{}};
+    const sv={auto:{},manual:{},rates:{...SCONF.rates}};
     Object.keys(SCONF.auto).forEach(k=>{sv.auto[k]={lbl:SCONF.auto[k].lbl,혜택:SCONF.auto[k].혜택,기준:SCONF.auto[k].기준};});
     Object.keys(SCONF.manual).forEach(k=>{sv.manual[k]={lbl:SCONF.manual[k].lbl,혜택:SCONF.manual[k].혜택};});
     await db.collection('quetta_settings').doc('sconf').set(sv);
     setSyncMsg('✓ 설정 저장 완료');
   }catch(e){setSyncMsg('⚠ 설정 저장 실패');}
+}
+function updRate(key,val){
+  const n=Number(String(val).replace(/[,\s원]/g,''));
+  if(!isNaN(n))SCONF.rates[key]=n;
+}
+// 혜택 문자열 → 지급액 계산
+function calcBenefitAmount(혜택){
+  if(!혜택)return 0;
+  const rates=SCONF.rates||{};
+  const m=혜택.match(/^(\S+?)\s*(\d+)%$/);
+  if(m){
+    const type=m[1],pct=Number(m[2]);
+    for(const k in rates){if(type.includes(k))return Math.round(rates[k]*pct/100);}
+  }
+  if(혜택.includes('매점'))return rates.매점상품권||50000;
+  return 0;
 }
 async function loadMonthData(){
   const mk=mkey();
@@ -1590,6 +1674,16 @@ function pgSettings(){
     </div>`;
   });
   h+=`</div></div>`;
+  // ── 지급 금액 (원가) 설정
+  h+=`<div class="sec-title" style="margin-top:22px">💰 지급 금액 (원가) — 리포트 총액 자동 계산용</div>`;
+  h+=`<div class="dim" style="font-size:11px;margin-bottom:8px">각 혜택의 100% 기준 금액. 리포트에서 "식비 50%" 등 비율에 따라 자동 계산됩니다.</div>`;
+  h+=`<div class="card"><div style="padding:12px 14px;display:grid;grid-template-columns:120px 1fr 120px 1fr;gap:10px 14px;align-items:center">`;
+  const rateFields=[['식비','식비 (100% 기준)'],['독서실비','독서실비 (100% 기준)'],['교습비','교습비 (100% 기준)'],['매점상품권','매점상품권 (1건당)']];
+  rateFields.forEach(([key,lbl])=>{
+    const v=SCONF.rates?.[key]||0;
+    h+=`<label style="font-size:12px;color:var(--mu)">${lbl}</label><div style="display:flex;align-items:center;gap:4px"><input class="fi nn" style="width:100%" value="${v.toLocaleString()}" onblur="updRate('${key}',this.value);saveSettings();render()"><span style="font-size:11px;color:var(--mu)">원</span></div>`;
+  });
+  h+=`</div></div>`;
   // ── 통계 제외 시험 설정
   const savedMonths=Object.keys(S.accumulated).sort();
   h+=`<div class="sec-title" style="margin-top:22px">📊 통계 제외 시험</div>`;
@@ -1613,8 +1707,18 @@ function pgSettings(){
   return h;
 }
 
+// 그래프 툴팁 헬퍼
+function chartTipShow(evt,name,mo,val,col,rank){
+  let t=document.getElementById('chart-tip');
+  if(!t){t=document.createElement('div');t.id='chart-tip';t.className='chart-tip';document.body.appendChild(t);}
+  t.innerHTML=`<div class="tt" style="color:${col}">${name}</div><div class="ts">${mo}</div><div class="tv">환산평균 <span style="color:${col}">${val.toFixed(1)}</span></div>${rank?`<div class="ts" style="margin-top:3px">${rank}</div>`:''}`;
+  t.style.display='block';t.style.opacity='1';
+  t.style.left=(evt.clientX+14)+'px';t.style.top=(evt.clientY-24)+'px';
+}
+function chartTipHide(){const t=document.getElementById('chart-tip');if(t)t.style.opacity='0',t.style.display='none';}
+function chartTipMove(evt){const t=document.getElementById('chart-tip');if(!t||t.style.display==='none')return;t.style.left=(evt.clientX+14)+'px';t.style.top=(evt.clientY-24)+'px';}
 function buildLineChart(months,monthStats){
-  const W=460,H=380,PL=48,PR=62,PT=22,PB=54;
+  const W=680,H=520,PL=56,PR=72,PT=26,PB=62;
   const iW=W-PL-PR,iH=H-PT-PB;const n=months.length;
   const ovAvgs=months.map(k=>+(monthStats[k]?.overallAvg||0));
   const banSet=new Set();
@@ -1622,7 +1726,6 @@ function buildLineChart(months,monthStats){
   const bans=[...banSet].sort((a,b)=>a-b);
   const banData={};
   bans.forEach(b=>{banData[b]=months.map(k=>{const s=(monthStats[k]?.classStats||[]).find(x=>String(x.반)===b);return s?+s.환산:null;});});
-  // 필터 적용
   const isBanActive=b=>_chartActiveBans===null||_chartActiveBans.has(b);
   const activeBans=bans.filter(isBanActive);
   let allVals=[...ovAvgs.filter(v=>v>0)];
@@ -1634,39 +1737,63 @@ function buildLineChart(months,monthStats){
   const COLORS=['#1a5fa0','#1e7a45','#a06010','#c0362a','#7b5fa0','#1a9090','#a05080','#608040'];
   let svg=`<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:${W}px;display:block;margin:0 auto;overflow:visible">`;
   // y 그리드
-  for(let i=0;i<=8;i++){const y=PT+iH*(i/8);const v=(hi-lo)*(1-i/8)+lo;svg+=`<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="var(--bo2)" stroke-width="1"/><text x="${PL-5}" y="${y+4}" text-anchor="end" font-size="11" fill="var(--mu)">${v.toFixed(0)}</text>`;}
+  for(let i=0;i<=8;i++){const y=PT+iH*(i/8);const v=(hi-lo)*(1-i/8)+lo;svg+=`<line x1="${PL}" y1="${y}" x2="${W-PR}" y2="${y}" stroke="var(--bo2)" stroke-width="1"/><text x="${PL-6}" y="${y+4}" text-anchor="end" font-size="12" fill="var(--mu)">${v.toFixed(0)}</text>`;}
   months.forEach((k,i)=>{
     const d=S.accumulated[k];const line1=(d.label||mlbl(k)).replace(/\d{4}년 /,'');const line2=d.시험종류||'';
-    svg+=`<text x="${xp(i)}" y="${H-PB+17}" text-anchor="middle" font-size="11" fill="var(--mu)">${line1}</text>`;
-    if(line2)svg+=`<text x="${xp(i)}" y="${H-PB+31}" text-anchor="middle" font-size="10" fill="var(--mu2)">(${line2})</text>`;
+    svg+=`<text x="${xp(i)}" y="${H-PB+20}" text-anchor="middle" font-size="12" fill="var(--mu)">${line1}</text>`;
+    if(line2)svg+=`<text x="${xp(i)}" y="${H-PB+36}" text-anchor="middle" font-size="11" fill="var(--mu2)">(${line2})</text>`;
     svg+=`<line x1="${xp(i)}" y1="${PT}" x2="${xp(i)}" y2="${H-PB}" stroke="var(--bo2)" stroke-width="1"/>`;
   });
-  // 반별 라인 (활성 반만)
+  // 반별 라인
   bans.forEach((b,ci)=>{
     if(!isBanActive(b))return;
     const pts=banData[b];const col=COLORS[ci%COLORS.length];let path='';
     pts.forEach((v,i)=>{if(v===null)return;if(!path)path=`M${xp(i)},${yp(v)}`;else path+=`L${xp(i)},${yp(v)}`;});
-    if(path)svg+=`<path d="${path}" fill="none" stroke="${col}" stroke-width="1.5" stroke-dasharray="4 2" opacity=".7"/>`;
+    if(path){
+      // 실제 라인 (얇게)
+      svg+=`<path d="${path}" fill="none" stroke="${col}" stroke-width="1.8" stroke-dasharray="4 2" opacity=".75"/>`;
+      // hover hit area (투명하게 두껍게 - hover 감지용)
+      svg+=`<path d="${path}" fill="none" stroke="${col}" stroke-width="14" opacity="0" style="cursor:pointer" onmouseover="chartTipShow(event,'${BAN_CODE[b]||b}반 (${b})','전체 추이',${banData[b].filter(v=>v!==null).reduce((a,v)=>a+v,0)/banData[b].filter(v=>v!==null).length||0},'${col}','')" onmousemove="chartTipMove(event)" onmouseout="chartTipHide()"/>`;
+    }
     let lastIdx=-1;
-    pts.forEach((v,i)=>{if(v!==null){svg+=`<circle cx="${xp(i)}" cy="${yp(v)}" r="3" fill="${col}" opacity=".8"><title>${S.accumulated[months[i]].label||months[i]} ${b}반: ${v.toFixed(1)}</title></circle>`;lastIdx=i;}});
-    if(lastIdx>=0&&banData[b][lastIdx]!==null)svg+=`<text x="${xp(lastIdx)+10}" y="${yp(banData[b][lastIdx])+4}" font-size="11" fill="${col}" font-weight="600">${BAN_CODE[b]||b}</text>`;
+    pts.forEach((v,i)=>{
+      if(v!==null){
+        const monLbl=(S.accumulated[months[i]].label||mlbl(months[i])).replace(/\d{4}년 /,'');
+        const 시험=S.accumulated[months[i]].시험종류||'';
+        // 반별 순위 계산 (이 월에서)
+        const monthCS=(monthStats[months[i]]?.classStats||[]);
+        const sorted=[...monthCS].sort((a,b)=>b.환산-a.환산);
+        const rank=sorted.findIndex(s=>String(s.반)===b)+1;
+        const rankStr=rank>0?`${monthCS.length}개 반 중 ${rank}위`:'';
+        svg+=`<circle cx="${xp(i)}" cy="${yp(v)}" r="5" fill="${col}" opacity=".9" style="cursor:pointer" onmouseover="chartTipShow(event,'${BAN_CODE[b]||b}반 (${b})','${monLbl}${시험?' · '+시험:''}',${v},'${col}','${rankStr}')" onmousemove="chartTipMove(event)" onmouseout="chartTipHide()"/>`;
+        lastIdx=i;
+      }
+    });
+    if(lastIdx>=0&&banData[b][lastIdx]!==null)svg+=`<text x="${xp(lastIdx)+12}" y="${yp(banData[b][lastIdx])+5}" font-size="13" fill="${col}" font-weight="700">${BAN_CODE[b]||b}</text>`;
   });
   // 전체 평균
   let oPath='';ovAvgs.forEach((v,i)=>{if(v>0)oPath+=(!oPath?`M${xp(i)},${yp(v)}`:`L${xp(i)},${yp(v)}`);});
-  if(oPath)svg+=`<path d="${oPath}" fill="none" stroke="var(--gold)" stroke-width="2.5"/>`;
-  ovAvgs.forEach((v,i)=>{if(!v)return;svg+=`<circle cx="${xp(i)}" cy="${yp(v)}" r="4" fill="var(--gold)"><title>${S.accumulated[months[i]].label||months[i]} 전체: ${v.toFixed(1)}</title></circle><text x="${xp(i)}" y="${yp(v)-9}" text-anchor="middle" font-size="11" fill="var(--gold2)" font-weight="700">${v.toFixed(1)}</text>`;});
+  if(oPath){
+    svg+=`<path d="${oPath}" fill="none" stroke="var(--gold)" stroke-width="3"/>`;
+  }
+  ovAvgs.forEach((v,i)=>{
+    if(!v)return;
+    const monLbl=(S.accumulated[months[i]].label||mlbl(months[i])).replace(/\d{4}년 /,'');
+    const 시험=S.accumulated[months[i]].시험종류||'';
+    svg+=`<circle cx="${xp(i)}" cy="${yp(v)}" r="6" fill="var(--gold)" style="cursor:pointer" onmouseover="chartTipShow(event,'전체 평균','${monLbl}${시험?' · '+시험:''}',${v},'#a06010','')" onmousemove="chartTipMove(event)" onmouseout="chartTipHide()"/><text x="${xp(i)}" y="${yp(v)-11}" text-anchor="middle" font-size="12" fill="var(--gold2)" font-weight="700">${v.toFixed(1)}</text>`;
+  });
   svg+=`</svg>`;
-  // Legend (클릭 가능)
+  // Legend
   const filterOn=_chartActiveBans!==null;
-  let legend=`<div style="display:flex;flex-wrap:wrap;gap:6px 12px;padding:8px 10px 12px;font-size:12px">
+  let legend=`<div style="display:flex;flex-wrap:wrap;gap:8px 14px;padding:10px 12px 14px;font-size:13px">
     <span style="color:var(--gold);font-weight:700;cursor:pointer;user-select:none${filterOn?';border-bottom:1px dashed var(--gold2)':''}" onclick="_chartActiveBans=null;render()" title="클릭하여 전체 반 다시 보기">● 전체평균${filterOn?' 🔄':''}</span>`;
   bans.forEach((b,ci)=>{
     const active=isBanActive(b);
     legend+=`<span style="color:${COLORS[ci%COLORS.length]};opacity:${active?'.9':'.3'};cursor:pointer;user-select:none;text-decoration:${active?'none':'line-through'}" onclick="toggleChartBan('${b}')" title="클릭하여 표시/숨김">-- ${BAN_CODE[b]||b}반(${b})</span>`;
   });
-  if(filterOn)legend+=`<span style="color:var(--mu);font-size:10px;margin-left:auto">💡 반 라벨 클릭 = 필터, 전체평균 클릭 = 전체 복귀</span>`;
+  if(filterOn)legend+=`<span style="color:var(--mu);font-size:11px;margin-left:auto">💡 반 라벨 클릭 = 필터, 전체평균 클릭 = 전체 복귀</span>`;
   legend+=`</div>`;
-  return`<div class="card"><div class="ch"><span class="ct">추이 그래프</span><span class="cs">${months.length}개월${filterOn?` · ${activeBans.length}개 반 필터`:''}</span></div><div style="padding:10px 8px 0">${svg}</div>${legend}</div>`;
+  return`<div class="card"><div class="ch"><span class="ct">추이 그래프</span><span class="cs">${months.length}개월${filterOn?` · ${activeBans.length}개 반 필터`:''} · <span style="color:var(--mu)">💡 점/선에 마우스 올려 상세</span></span></div><div style="padding:14px 10px 0">${svg}</div>${legend}</div>`;
 }
 
 function ubH(id,lbl,sub){

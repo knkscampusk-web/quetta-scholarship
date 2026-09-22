@@ -389,6 +389,140 @@ async function toggleStatsExcluded(mk){
     render();
   }catch(e){setSyncMsg('⚠ 저장 실패: '+e.message);S.accumulated[mk].excludeFromStats=!S.accumulated[mk].excludeFromStats;render();}
 }
+// ═════════ 월별 리포트 기능 ═════════
+async function saveReportMeta(mk,field,val){
+  if(!S.accumulated[mk])return;
+  if(!S.accumulated[mk].reportMeta)S.accumulated[mk].reportMeta={};
+  S.accumulated[mk].reportMeta[field]=val;
+  try{await db.collection('quetta_data').doc(mk).set({reportMeta:S.accumulated[mk].reportMeta},{merge:true});setSyncMsg('✓ 리포트 저장');}catch(e){setSyncMsg('⚠ 저장 실패');}
+}
+function generateReportHTML(mk,forDownload){
+  const d=S.accumulated[mk];if(!d)return'';
+  const winners=getWinnersFromSaved(d);
+  const meta=d.reportMeta||{};
+  const yearMonth=mlbl(mk).match(/(\d{4})년 (\d+)월/);
+  const year=yearMonth?yearMonth[1]:S.curYear;
+  const month=yearMonth?yearMonth[2]:S.curMonth;
+  const 시험종류=d.시험종류||'';
+  // 번호 매기기 (제외 항목은 번호 skip)
+  let num=0;
+  const rows=winners.map(w=>{
+    const isEx=w.excluded;
+    if(!isEx)num++;
+    return{...w,num:isEx?'':num,isEx};
+  });
+  // 혜택별 인원 집계 (제외 제외)
+  const 혜택집계={};
+  winners.filter(w=>!w.excluded).forEach(w=>{
+    const 혜택=w.혜택||'(미지정)';
+    혜택집계[혜택]=(혜택집계[혜택]||0)+1;
+  });
+  const styles=`
+    body{font-family:'맑은 고딕','Malgun Gothic',sans-serif;font-size:11pt;line-height:1.6;color:#222;padding:0;margin:0}
+    h1{font-size:16pt;font-weight:700;margin:0 0 18px;text-align:center;border-bottom:2px solid #333;padding-bottom:8px}
+    h2{font-size:13pt;font-weight:700;margin:22px 0 10px;color:#333;border-left:4px solid #a06010;padding-left:8px}
+    table{border-collapse:collapse;width:100%;margin:8px 0;font-size:10.5pt}
+    th,td{border:1px solid #666;padding:6px 8px;text-align:center;vertical-align:middle}
+    th{background:#f0efe9;font-weight:700}
+    tr.ex td{text-decoration:line-through;color:#888}
+    .name{font-weight:600}
+    .meta-row{margin:6px 0;line-height:1.7}
+    .meta-row strong{margin-right:8px}
+    .field-input{border:1px dashed #bbb;padding:2px 6px;background:#fafaf6;font-family:inherit;font-size:inherit;width:calc(100% - 40px);border-radius:3px}
+    .field-input:focus{outline:none;border-color:#a06010;background:#fff}
+    .field-textarea{border:1px dashed #bbb;padding:6px 8px;background:#fafaf6;font-family:inherit;font-size:inherit;width:calc(100% - 20px);min-height:80px;border-radius:3px;resize:vertical;line-height:1.6}
+    .field-textarea:focus{outline:none;border-color:#a06010;background:#fff}
+    .summary-item{margin:4px 0;padding-left:12px}
+    @media print{body{padding:20px}}
+  `;
+  const fieldInput=(field,placeholder)=>{
+    const val=(meta[field]||'').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+    if(forDownload){
+      return val?`<span>${val.replace(/\n/g,'<br>')}</span>`:`<span style="color:#999">(미입력)</span>`;
+    }
+    return `<input class="field-input" placeholder="${placeholder}" value="${val}" oninput="saveReportMeta('${mk}','${field}',this.value)">`;
+  };
+  const fieldTextarea=(field,placeholder)=>{
+    const val=(meta[field]||'').replace(/&/g,'&amp;').replace(/</g,'&lt;');
+    if(forDownload){
+      return val?`<div style="white-space:pre-wrap">${val}</div>`:`<div style="color:#999">(미입력)</div>`;
+    }
+    return `<textarea class="field-textarea" placeholder="${placeholder}" oninput="saveReportMeta('${mk}','${field}',this.value)">${val}</textarea>`;
+  };
+  let tableHtml=`<table>
+    <thead><tr><th style="width:60px">번호</th><th style="width:100px">이름</th><th style="width:60px">반</th><th style="width:80px">학번</th><th>장학금 종류</th><th style="width:120px">지급 금액</th><th style="width:120px">비고</th></tr></thead>
+    <tbody>`;
+  rows.forEach(w=>{
+    const _비고=w.비고||(S.remarks?.[wkey(w)]||'');
+    const exNote=w.isEx?(_비고?_비고+' / 제외':'제외'):_비고;
+    tableHtml+=`<tr class="${w.isEx?'ex':''}">
+      <td>${w.num}</td>
+      <td class="name">${w.이름}</td>
+      <td>${w.반?w.반+'반':''}</td>
+      <td>${w.번호||''}</td>
+      <td>${w.lbl}</td>
+      <td>${w.혜택||''}</td>
+      <td>${exNote}</td>
+    </tr>`;
+  });
+  tableHtml+=`</tbody></table>`;
+  let summaryHtml='';
+  Object.entries(혜택집계).forEach(([혜택,cnt])=>{
+    summaryHtml+=`<div class="summary-item">· ${혜택}: ${cnt}명</div>`;
+  });
+  summaryHtml+=`<div class="summary-item" style="margin-top:8px"><strong>총 대상 인원:</strong> ${winners.filter(w=>!w.excluded).length}명 ${winners.filter(w=>w.excluded).length?`(제외 ${winners.filter(w=>w.excluded).length}명 별도)`:''}</div>`;
+  summaryHtml+=`<div class="summary-item" style="margin-top:6px"><strong>총 지급액:</strong> ${fieldInput('총지급액','예: 3,295,300원')}</div>`;
+  summaryHtml+=`<div class="summary-item" style="margin-top:6px"><strong>공제 안내:</strong> ${fieldInput('공제안내','예: 6월분 교습비에서 선공제')}</div>`;
+  const body=`
+    <h1>강남대성 퀘타 ${year}년 ${month}월 모의고사 장학생 현황</h1>
+    <h2>1. 모의고사 정보</h2>
+    <div class="meta-row">모의고사 시행 : ${fieldInput('시행일자','예: '+month+'월 더 프리미엄 모의고사_'+year+'년 '+month+'월 XX일(X)')}</div>
+    <div class="meta-row">시험 종류 : ${시험종류||'-'}</div>
+    <h2>2. 장학생 명단</h2>
+    ${tableHtml}
+    <h2>3. 총 지급 내역 요약</h2>
+    ${summaryHtml}
+    <h2>4. 시상</h2>
+    <div class="meta-row"><strong>시상 일시:</strong> ${fieldInput('시상일시','예: 4월 8일 (화) 오전 8시 20분')}</div>
+    <div class="meta-row"><strong>시상 장소:</strong> ${fieldInput('시상장소','예: 강의동 로비층 행정실')}</div>
+    <h2>5. 기타 사항</h2>
+    ${fieldTextarea('기타사항','자유 기재 (예: 각 장학금 간 중복자는 유리한 장학으로 적용. 기존 입학 장학 적용중인 학생은 수기로 장학금액 조정...)')}
+  `;
+  return `<style>${styles}</style>${body}`;
+}
+function showReportModal(mk){
+  const html=generateReportHTML(mk,false);
+  const modalBody=`
+    <div style="margin-bottom:12px;padding:10px 12px;background:rgba(181,104,30,.06);border:1px solid rgba(181,104,30,.2);border-radius:6px;font-size:11px;color:var(--gold2)">
+      💡 <strong>편집 가능:</strong> 시행일자·시상일시·시상장소·기타사항·총지급액 필드는 클릭해서 편집. 자동 저장됩니다.
+    </div>
+    <div style="border:1px solid var(--bo);border-radius:6px;padding:20px;background:#fff;color:#222;max-height:60vh;overflow-y:auto">
+      ${html}
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--bo)">
+      <button class="btn" onclick="closeModal()">닫기</button>
+      <button class="btn btn-b" onclick="printReport('${mk}')">🖨 인쇄/PDF</button>
+      <button class="btn btn-g" onclick="downloadReportDoc('${mk}')">⬇ Word 다운로드</button>
+    </div>
+  `;
+  showModal(`📄 ${fullLbl(mk)} 장학생 현황 리포트`,modalBody);
+}
+function printReport(mk){
+  const html=generateReportHTML(mk,true);
+  const w=window.open('','_blank','width=800,height=900');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+fullLbl(mk)+' 장학생 현황</title></head><body>'+html+'<script>window.onload=function(){setTimeout(function(){window.print()},300)}<\/script></body></html>');
+  w.document.close();
+}
+function downloadReportDoc(mk){
+  const html=generateReportHTML(mk,true);
+  const fullHtml='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>'+fullLbl(mk)+' 장학생 현황</title></head><body>'+html+'</body></html>';
+  const blob=new Blob(['\ufeff',fullHtml],{type:'application/msword'});
+  const link=document.createElement('a');
+  link.href=URL.createObjectURL(blob);
+  link.download='강남대성_퀘타_'+mlbl(mk).replace(/[^가-힣0-9]/g,'_')+'_장학생현황.doc';
+  document.body.appendChild(link);link.click();
+  setTimeout(()=>{document.body.removeChild(link);URL.revokeObjectURL(link.href);},100);
+}
 async function saveSettings(){
   setSyncMsg('설정 저장 중...');
   try{
@@ -1055,7 +1189,7 @@ function pgFinal(){
     let h=`<div class="ph"><h2>최종 명단</h2><p>${fullLbl(S.finalViewMonth)} 저장본 (읽기 전용)</p></div>`;
     const toggleLbl=_finalShowExcluded?'👁 제외 항목 표시 중':'🚫 제외 항목 숨김';
     const toggleCls=_finalShowExcluded?'btn-b':'btn';
-    h+=`<div class="btn-row"><button class="btn" onclick="S.finalViewMonth=null;render()">← 이번달로</button><select class="fi" onchange="S.finalViewMonth=this.value||null;render()"><option value="">— 월 선택 —</option>${months.map(k=>`<option value="${k}"${k===S.finalViewMonth?' selected':''}>${fullLbl(k)}</option>`).join('')}</select>${exCnt?`<button class="${toggleCls}" onclick="_finalShowExcluded=!_finalShowExcluded;render()">${toggleLbl}</button>`:''}</div>`;
+    h+=`<div class="btn-row"><button class="btn" onclick="S.finalViewMonth=null;render()">← 이번달로</button><select class="fi" onchange="S.finalViewMonth=this.value||null;render()"><option value="">— 월 선택 —</option>${months.map(k=>`<option value="${k}"${k===S.finalViewMonth?' selected':''}>${fullLbl(k)}</option>`).join('')}</select><button class="btn btn-b" onclick="showReportModal('${S.finalViewMonth}')">📄 월별 리포트</button>${exCnt?`<button class="${toggleCls}" onclick="_finalShowExcluded=!_finalShowExcluded;render()">${toggleLbl}</button>`:''}</div>`;
     h+=`<div class="notice">📁 ${fullLbl(S.finalViewMonth)} · 총 ${winners.length}건 | 최종 ${act}건${exCnt?` | 제외 ${exCnt}건`:''}</div>`;
     if(!winners.length)return h+`<div class="empty">저장된 장학생이 없습니다.</div>`;
     h+=`<div class="card"><div class="tw"><table class="t"><thead><tr><th>상태</th><th>장학명</th><th>혜택</th><th>반</th><th>번호</th><th>이름</th><th>계열</th><th>환산/향상</th><th>기존장학</th><th>비고</th></tr></thead><tbody>`;
@@ -1077,7 +1211,7 @@ function pgFinal(){
   const toggleLbl=_finalShowExcluded?'👁 제외 항목 표시 중':'🚫 제외 항목 숨김';
   const toggleCls=_finalShowExcluded?'btn-b':'btn';
   const dropdown=_bgLoading?`<span class="dim" style="margin-left:auto;font-size:11px">지난달 조회 로딩 중...</span>`:(pastMonths.length?`<select class="fi" style="margin-left:auto" onchange="if(this.value){S.finalViewMonth=this.value;render();}this.value=''"><option value="">📅 지난달 명단 조회...</option>${pastMonths.slice().reverse().map(k=>`<option value="${k}">${fullLbl(k)}</option>`).join('')}</select>`:'');
-  h+=`<div class="btn-row"><button class="btn btn-g" onclick="exportExcel()">⬇ 엑셀 다운로드</button><button class="btn btn-gr" onclick="saveToFirestore().then(()=>render())">☁ 이번달 저장</button><button class="${toggleCls}" onclick="_finalShowExcluded=!_finalShowExcluded;render()">${toggleLbl}</button>${dropdown}</div>`;
+  h+=`<div class="btn-row"><button class="btn btn-g" onclick="exportExcel()">⬇ 엑셀 다운로드</button><button class="btn btn-b" onclick="showReportModal('${mkey()}')">📄 월별 리포트</button><button class="btn btn-gr" onclick="saveToFirestore().then(()=>render())">☁ 이번달 저장</button><button class="${toggleCls}" onclick="_finalShowExcluded=!_finalShowExcluded;render()">${toggleLbl}</button>${dropdown}</div>`;
   h+=`<div style="font-size:11px;color:var(--mu);margin-bottom:10px">☑ 체크 = 제외(줄 긋기) · 비고는 수기입력 탭과 양방향 sync · 엑셀 다운로드 시 제외 항목엔 취소선 적용</div>`;
   if(!_ws.length)return h+`<div class="empty">산출된 장학생이 없습니다.</div>`;
   h+=`<div class="card"><div class="tw"><table class="t"><thead><tr><th>제외</th><th>장학명</th><th>혜택</th><th>반</th><th>번호</th><th>이름</th><th>계열</th><th>환산/향상</th><th>기존장학</th><th>중복</th><th style="min-width:120px">비고</th><th>삭제</th></tr></thead><tbody>`;
